@@ -168,28 +168,12 @@ set_up_window(GMainLoop *loop, GtkWidget *window, int screen_no){
 }
 
 
-gint main (gint argc, gchar *argv[])
+
+
+
+static GstElement *
+make_video_windows(GMainLoop *loop)
 {
-  //initialise threads before any gtk stuff (because not using gtk_init)
-  g_thread_init(NULL);
-  /*this is more complicated than plain gtk_init/gst_init, so that options from
-    all over can be gathered and presented together.
-   */
-  GOptionGroup *gst_opts = gst_init_get_option_group();
-  GOptionGroup *gtk_opts = gtk_get_option_group(TRUE);
-  GOptionContext *ctx = g_option_context_new("...!");
-  g_option_context_add_main_entries(ctx, entries, NULL);
-  g_option_context_add_group(ctx, gst_opts);
-  g_option_context_add_group(ctx, gtk_opts);
-  GError *error = NULL;
-  if (!g_option_context_parse(ctx, &argc, &argv, &error)){
-    g_print ("Error initializing: %s\n", GST_STR_NULL(error->message));
-    exit (1);
-  }
-  g_option_context_free(ctx);
-
-  GMainLoop *loop = g_main_loop_new(NULL, FALSE);
-
   windows_t windows;
   windows.realised = 0;
 
@@ -212,6 +196,34 @@ gint main (gint argc, gchar *argv[])
   gst_object_unref(bus);
 
   gst_element_set_state(pipeline, GST_STATE_PLAYING);
+  return pipeline;
+}
+
+
+
+gint main (gint argc, gchar *argv[])
+{
+  //initialise threads before any gtk stuff (because not using gtk_init)
+  g_thread_init(NULL);
+  /*this is more complicated than plain gtk_init/gst_init, so that options from
+    all over can be gathered and presented together.
+   */
+  GOptionGroup *gst_opts = gst_init_get_option_group();
+  GOptionGroup *gtk_opts = gtk_get_option_group(TRUE);
+  GOptionContext *ctx = g_option_context_new("...!");
+  g_option_context_add_main_entries(ctx, entries, NULL);
+  g_option_context_add_group(ctx, gst_opts);
+  g_option_context_add_group(ctx, gtk_opts);
+  GError *error = NULL;
+  if (!g_option_context_parse(ctx, &argc, &argv, &error)){
+    g_print ("Error initializing: %s\n", GST_STR_NULL(error->message));
+    exit (1);
+  }
+  g_option_context_free(ctx);
+
+  GMainLoop *loop = g_main_loop_new(NULL, FALSE);
+
+  GstElement *pipeline = make_video_windows(loop);
 
   g_main_loop_run(loop);
 
@@ -219,4 +231,3 @@ gint main (gint argc, gchar *argv[])
   gst_object_unref (pipeline);
   return 0;
 }
-
