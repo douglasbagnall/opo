@@ -24,6 +24,7 @@ static GOptionEntry entries[] =
 typedef struct windows_s {
   int realised;
   int requested;
+  int prepared;
   GstElement *sinks[MAX_SCREENS];
   XID        xwindows[MAX_SCREENS];
   GtkWidget  *gtk_windows[MAX_SCREENS];

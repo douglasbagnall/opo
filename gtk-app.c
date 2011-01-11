@@ -73,12 +73,16 @@ bus_call(GstBus * bus, GstMessage *msg, gpointer data)
   windows_t *windows = (windows_t *)data;
   if (GST_MESSAGE_TYPE(msg) == GST_MESSAGE_ELEMENT &&
       gst_structure_has_name(msg->structure, "prepare-xwindow-id")){
-    g_print("Got prepare-xwindow-id msg. option screens: %d\n", option_screens);
-    for (int i = 0; i < option_screens; i++){
-      gst_x_overlay_set_xwindow_id(GST_X_OVERLAY(windows->sinks[i]),
-          windows->xwindows[i]);
-      g_print("connected sink %d to window %lu\n", i, windows->xwindows[i]);
-      hide_mouse(windows->gtk_windows[i]);
+    windows->prepared++;
+    g_print("Got prepare-xwindow-id msg. for %d/%d screens\n",
+        windows->prepared, option_screens);
+    if (windows->prepared == option_screens){
+      for (int i = 0; i < option_screens; i++){
+        gst_x_overlay_set_xwindow_id(GST_X_OVERLAY(windows->sinks[i]),
+            windows->xwindows[i]);
+        g_print("connected sink %d to window %lu\n", i, windows->xwindows[i]);
+        hide_mouse(windows->gtk_windows[i]);
+      }
     }
   }
 }
