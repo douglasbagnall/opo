@@ -185,10 +185,8 @@ set_up_window(GMainLoop *loop, GtkWidget *window, int screen_no){
 
 
 
-
-
 static GstElement *
-make_video_windows(GMainLoop *loop)
+gstreamer_start(GMainLoop *loop)
 {
   windows_t windows;
   windows.realised = 0;
@@ -215,7 +213,12 @@ make_video_windows(GMainLoop *loop)
   return pipeline;
 }
 
-
+static void
+gstreamer_stop(GstElement *pipeline)
+{
+  gst_element_set_state(pipeline, GST_STATE_NULL);
+  gst_object_unref(pipeline);
+}
 
 gint main (gint argc, gchar *argv[])
 {
@@ -239,11 +242,10 @@ gint main (gint argc, gchar *argv[])
 
   GMainLoop *loop = g_main_loop_new(NULL, FALSE);
 
-  GstElement *pipeline = make_video_windows(loop);
+  GstElement *pipeline = gstreamer_start(loop);
 
   g_main_loop_run(loop);
 
-  gst_element_set_state (pipeline, GST_STATE_NULL);
-  gst_object_unref (pipeline);
+  gstreamer_stop(pipeline);
   return 0;
 }
