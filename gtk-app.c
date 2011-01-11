@@ -151,8 +151,10 @@ set_up_window(GMainLoop *loop, GtkWidget *window, int screen_no){
     GdkScreen * screen = gdk_screen_get_default();
     int width = gdk_screen_get_width(screen);
     /* XXX placement heuristic is crap */
+    int x = (width / option_screens) * screen_no + 1;
     gtk_window_move(GTK_WINDOW(window),
-        (width / 2 * screen_no + 200) % width, 50);
+		    x, 50);
+    g_print("putting window %d at %d\n", screen_no, x);
   }
 
   // attach key press signal to key press callback
@@ -217,5 +219,4 @@ gint main (gint argc, gchar *argv[])
   gst_object_unref (pipeline);
   return 0;
 }
-
 
