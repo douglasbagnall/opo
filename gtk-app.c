@@ -150,7 +150,19 @@ set_up_window(GMainLoop *loop, GtkWidget *window, int screen_no){
   if (option_screens > 1){
     GdkScreen * screen = gdk_screen_get_default();
     int width = gdk_screen_get_width(screen);
-    /* XXX placement heuristic is crap */
+    /* XXX placement heuristic is crap: this is better:
+
+       int monitors = gdk_screen_get_primary_monitor(GdkScreen *screen);
+
+       void gdk_screen_get_monitor_geometry(GdkScreen *screen,
+                                            gint monitor_num,
+                                            GdkRectangle *dest);
+      or
+
+       gint gdk_screen_get_monitor_at_point(GdkScreen *screen,
+                                             gint x,
+                                             gint y);
+    */
     int x = (width / option_screens) * screen_no + 1;
     gtk_window_move(GTK_WINDOW(window),
 		    x, 50);
