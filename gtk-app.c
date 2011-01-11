@@ -64,7 +64,8 @@ key_press_event_cb(GtkWidget *widget, GdkEventKey *event, gpointer data)
   return TRUE;
 }
 
-void destroy_cb(GtkWidget * widget, gpointer data)
+static void
+destroy_cb(GtkWidget * widget, gpointer data)
 {
   GMainLoop *loop = (GMainLoop*) data;
   g_print("Window destroyed\n");
