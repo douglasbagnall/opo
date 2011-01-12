@@ -23,7 +23,7 @@ def videotestsrc():
 
 
 class Screen:
-    def __init__(self, pipeline, videosrc=None):
+    def __init__(self, pipeline, videosrc=None, index, n):
         #video screen
         self.screen = gtk.DrawingArea()
         self.screen.set_size_request(WIDTH, HEIGHT)
@@ -32,7 +32,6 @@ class Screen:
         self.window = gtk.Window()
         self.vbox = gtk.VBox()   # vertical box
         self.vbox.pack_start(self.screen)
-        self.vbox.pack_start(self.buttons)
         self.window.add(self.vbox)
 
         # Create GStreamer bits and bobs
@@ -49,12 +48,9 @@ class Screen:
         self.pipeline.set_state(gst.STATE_PLAYING)
 
 
-class Main:
+class Control:
     def __init__(self):
-        #video screen
-        self.screen = gtk.DrawingArea()
-        self.screen.set_size_request(WIDTH, HEIGHT)
-
+        self.pipeline = gst.Pipeline()
         #buttons
         self.play_button = gtk.Button(stock=gtk.STOCK_MEDIA_PLAY)
         self.play_button.connect("clicked", self.play_onclick)
@@ -71,27 +67,17 @@ class Main:
         #pack window
         self.window = gtk.Window()
         self.vbox = gtk.VBox()   # vertical box
-        self.vbox.pack_start(self.screen)
         self.vbox.pack_start(self.buttons)
         self.window.add(self.vbox)
-
-        # Create GStreamer pipeline
-        self.pipeline = gst.Pipeline()
-        self.videosrc = videotestsrc()
-        self.pipeline.add(self.videosrc)
-        self.sink = gst.element_factory_make("ximagesink", "sink")
-        self.pipeline.add(self.sink)
-        self.videosrc.link(self.sink)
-
-        #self.window.connect("delete_event", self.delete_event)
         self.window.connect("destroy", self.destroy)
-
         self.window.show_all()
+
+
 
     def play_onclick(self, widget):
         print "play"
-        self.sink.set_xwindow_id(self.screen.window.xid)
-        self.pipeline.set_state(gst.STATE_PLAYING)
+        self.start_playing()
+
 
     def stop_onclick(self, widget):
         print "stop"
@@ -103,5 +89,21 @@ class Main:
 
     quit_onclick = destroy
 
-start = Main()
+    def start_playing(self):
+        self.videosrc = videotestsrc()
+        self.pipeline.add(self.videosrc)
+        self.
+
+
+        self.screens = [Screen(pipeline, videosrc, x, SCREENS) for x in range(SCREENS)]
+
+        self.sink = gst.element_factory_make("ximagesink", "sink")
+        self.pipeline.add(self.sink)
+        self.videosrc.link(self.sink)
+
+        self.sink.set_xwindow_id(self.screen.window.xid)
+
+        self.pipeline.set_state(gst.STATE_PLAYING)
+
+start = Control()
 gtk.main()
