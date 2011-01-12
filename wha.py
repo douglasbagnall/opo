@@ -9,6 +9,19 @@ import gtk
 WIDTH = 320
 HEIGHT = 240
 
+def videotestsrc():
+    """Make an interesting video test src"""
+    videosrc = gst.element_factory_make("videotestsrc", "video")
+    sp = videosrc.set_property
+    sp("pattern", "zone-plate")
+    sp("kt2", 0)
+    sp("kx2", 2)
+    sp("ky2", 3)
+    sp("kxy", 2)
+    sp("kt2", 0)
+    return videosrc
+
+
 class Screen:
     def __init__(self, videosrc=None):
         #video screen
@@ -62,15 +75,14 @@ class Main:
         self.vbox.pack_start(self.buttons)
         self.window.add(self.vbox)
 
-        # Create GStreamer bits and bobs
-        self.pipeline = gst.Pipeline("mypipeline")
-        self.videosrc = gst.element_factory_make("videotestsrc", "video")
+        # Create GStreamer pipeline
+        self.pipeline = gst.Pipeline()
+        self.videosrc = videotestsrc()
         self.pipeline.add(self.videosrc)
         self.sink = gst.element_factory_make("ximagesink", "sink")
         self.pipeline.add(self.sink)
         self.videosrc.link(self.sink)
 
-        #
         #self.window.connect("delete_event", self.delete_event)
         self.window.connect("destroy", self.destroy)
 
