@@ -42,17 +42,15 @@ pre_tee_pipeline(GstPipeline *pipeline, int width, int height){
   char * src_name = (option_fake) ? "videotestsrc" : "v4l2src";
   GstElement *src = gst_element_factory_make(src_name, NULL);
   GstElement *tee = gst_element_factory_make ("tee", NULL);
-  GstCaps *caps = gst_caps_new_any();
-
-  GValue gw = {0};
-  GValue gh = {0};
-  g_value_init(&gw, G_TYPE_INT);
-  g_value_init(&gh, G_TYPE_INT);
-  g_value_set_int(&gw, width);
-  g_value_set_int(&gh, height);
-
-  gst_caps_set_value(caps, "width", &gw);
-  gst_caps_set_value(caps, "height", &gh);
+  GstCaps *caps;
+  caps = gst_caps_new_simple("video/x-raw-rgb",
+      "width", G_TYPE_INT, width,
+      "height", G_TYPE_INT, height,
+      NULL);
+  gst_caps_merge(caps, gst_caps_new_simple("video/x-raw-yuv",
+          "width", G_TYPE_INT, width,
+          "height", G_TYPE_INT, height,
+          NULL));
 
   gst_bin_add_many(GST_BIN(pipeline),
       src,
