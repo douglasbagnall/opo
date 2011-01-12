@@ -1,4 +1,4 @@
-/*4 way video splitter */
+/*N way video splitter */
 #include <gst/gst.h>
 #include <gtk/gtk.h>
 #include <gst/interfaces/xoverlay.h>

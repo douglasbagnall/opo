@@ -55,8 +55,6 @@ clean:
 test-gtk: debug gtk-app
 	GST_DEBUG=sparrow:$(DEBUG_LEVEL) gdb ./gtk-app
 
-debug:
-	make -B CFLAGS='-g -fno-inline -fno-inline-functions -fno-omit-frame-pointer'
 
 .PHONY: TAGS all  rsync app-clean clean
 
@@ -67,3 +65,7 @@ GTK_INCLUDES = -I/usr/include/gtk-2.0/ -I/usr/include/cairo/ -I/usr/include/pang
 gtk-app::
 	$(CC)  -g $(ALL_CFLAGS) $(CPPFLAGS) $(CV_LINKS) $(INCLUDES) $(GTK_INCLUDES)\
 	  $(GTK_LINKS) -o $@ $(GTK_APP)
+
+debug:
+	#touch gtk-app.c
+	make -B CFLAGS='-g -fno-inline -fno-inline-functions -fno-omit-frame-pointer -O0' gtk-app
