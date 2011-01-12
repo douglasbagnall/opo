@@ -88,25 +88,40 @@ make_multi_pipeline(windows_t *windows, int count)
   return pipeline;
 }
 
-
-static void
-bus_call(GstBus * bus, GstMessage *msg, gpointer data)
+static GstBusSyncReply
+sync_bus_call(GstBus *bus, GstMessage *msg, gpointer data)
 {
+  // ignore anything but 'prepare-xwindow-id' element messages
+  if ((GST_MESSAGE_TYPE(msg) != GST_MESSAGE_ELEMENT) ||
+      (! gst_structure_has_name(msg->structure, "prepare-xwindow-id"))){
+   return GST_BUS_PASS;
+  }
   windows_t *windows = (windows_t *)data;
-  if (GST_MESSAGE_TYPE(msg) == GST_MESSAGE_ELEMENT &&
-      gst_structure_has_name(msg->structure, "prepare-xwindow-id")){
-    windows->prepared++;
-    g_print("Got prepare-xwindow-id msg. for %d/%d screens\n",
-        windows->prepared, option_screens);
-    if (windows->prepared == option_screens){
-      for (int i = 0; i < option_screens; i++){
-        window_t *w = &windows->windows[i];
-        gst_x_overlay_set_xwindow_id(GST_X_OVERLAY(w->sink), w->xid);
-        g_print("connected sink %d to window %lu\n", i, w->xid);
-        hide_mouse(w->widget);
-      }
+  windows->prepared++;
+  g_print("Got prepare-xwindow-id msg. for %d/%d screens\n",
+      windows->prepared, option_screens);
+  //connect this one up with the right window.
+  GstElement *sink = GST_ELEMENT(GST_MESSAGE_SRC(msg));
+  int done = 0;
+
+  g_print("found sink %p\n", sink);
+  for (int i = 0; i < option_screens; i++){
+    window_t *w = &windows->windows[i];
+    if (w->sink == sink){
+      gst_x_overlay_set_xwindow_id(GST_X_OVERLAY(sink), w->xid);
+      g_print("connected sink %d to window %lu\n", i, w->xid);
+      hide_mouse(w->widget);
+      done = 1;
+      break;
     }
   }
+
+  if (! done){
+    g_print("couldn't find a window for this sink!\n");
+  }
+
+  gst_message_unref(msg);
+  return GST_BUS_DROP;
 }
 
 static void
@@ -239,7 +254,8 @@ gstreamer_start(GMainLoop *loop)
   GstElement *pipeline = (GstElement *)make_multi_pipeline(&windows, option_screens);
 
   GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline));
-  gst_bus_add_watch(bus, (GstBusFunc)bus_call, &windows);
+  gst_bus_set_sync_handler(bus, (GstBusSyncHandler)sync_bus_call, pipeline);
+  //gst_bus_add_watch(bus, (GstBusFunc)bus_call, &windows);
   gst_object_unref(bus);
 
   gst_element_set_state(pipeline, GST_STATE_PLAYING);
