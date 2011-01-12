@@ -268,8 +268,8 @@ gstreamer_stop(GstElement *pipeline)
 gint main (gint argc, gchar *argv[])
 {
   //initialise threads before any gtk stuff (because not using gtk_init)
-  g_thread_init(NULL);
   g_type_init();
+  g_thread_init(NULL);
   /*this is more complicated than plain gtk_init/gst_init, so that options from
     all over can be gathered and presented together.
    */
