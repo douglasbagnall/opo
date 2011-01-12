@@ -1,4 +1,4 @@
-all::
+all::	gtk-app
 
 GDB_ALWAYS_FLAGS = -g
 WARNINGS = -Wall -Wextra -Wno-unused-parameter
@@ -69,3 +69,4 @@ gtk-app::
 debug:
 	#touch gtk-app.c
 	make -B CFLAGS='-g -fno-inline -fno-inline-functions -fno-omit-frame-pointer -O0' gtk-app
+
