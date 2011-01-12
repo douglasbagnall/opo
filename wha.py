@@ -23,7 +23,7 @@ def videotestsrc():
 
 
 class Screen:
-    def __init__(self, videosrc=None):
+    def __init__(self, pipeline, videosrc=None):
         #video screen
         self.screen = gtk.DrawingArea()
         self.screen.set_size_request(WIDTH, HEIGHT)
@@ -36,8 +36,8 @@ class Screen:
         self.window.add(self.vbox)
 
         # Create GStreamer bits and bobs
-        self.videosrc = videosrc        
-        self.pipeline = gst.Pipeline()        
+        self.videosrc = videosrc
+        self.pipeline = pipeline
         self.pipeline.add(self.videosrc)
         self.sink = gst.element_factory_make("ximagesink", "sink")
         self.pipeline.add(self.sink)
