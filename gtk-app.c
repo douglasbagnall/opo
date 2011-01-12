@@ -285,6 +285,15 @@ gint main (gint argc, gchar *argv[])
     exit (1);
   }
   g_option_context_free(ctx);
+  /*sanitise options*/
+  if (option_screens > MAX_SCREENS)
+    option_screens = MAX_SCREENS;
+  if (option_screens < MIN_SCREENS)
+    option_screens = MIN_SCREENS;
+  if (option_width > MAX_PIXELS)
+    option_width = MAX_PIXELS;
+  if (option_height > MAX_PIXELS)
+    option_height = MAX_PIXELS;
 
   GMainLoop *loop = g_main_loop_new(NULL, FALSE);
 

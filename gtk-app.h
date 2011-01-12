@@ -8,6 +8,8 @@ static gint option_width = 320;
 static gint option_height = 320;
 
 #define MAX_SCREENS 8
+#define MIN_SCREENS 1
+#define MAX_PIXELS 999999
 
 static GOptionEntry entries[] =
 {
