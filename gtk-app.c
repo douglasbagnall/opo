@@ -187,12 +187,9 @@ set_up_window(GMainLoop *loop, GtkWidget *window, int screen_no){
     gtk_window_fullscreen(GTK_WINDOW(window));
   }
 
-  /*if more than one screen is requested, set the screen number.
-    otherwise let it fall were it falls */
-  if (option_screens > 1){
-    GdkScreen * screen = gdk_screen_get_default();
-    int width = gdk_screen_get_width(screen);
-    /* XXX placement heuristic is crap: this is better:
+  GdkScreen * screen = gdk_screen_get_default();
+  int width = gdk_screen_get_width(screen);
+  /* XXX placement heuristic is crap: this is better:
 
        int monitors = gdk_screen_get_primary_monitor(GdkScreen *screen);
 
@@ -204,11 +201,10 @@ set_up_window(GMainLoop *loop, GtkWidget *window, int screen_no){
        gint gdk_screen_get_monitor_at_point(GdkScreen *screen,
                                              gint x,
                                              gint y);
-    */
-    int x = (width / option_screens) * screen_no + 1;
-    gtk_window_move(GTK_WINDOW(window), x, 50);
-    g_print("putting window %d at %d\n", screen_no, x);
-  }
+  */
+  int x = (width / option_screens) * screen_no + 1;
+  gtk_window_move(GTK_WINDOW(window), x, 50);
+  g_print("putting window %d at %d\n", screen_no, x);
 
   // attach key press signal to key press callback
   gtk_widget_set_events(window, GDK_KEY_PRESS_MASK);
