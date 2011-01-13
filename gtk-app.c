@@ -212,8 +212,6 @@ gstreamer_start(GMainLoop *loop, window_t windows[MAX_SCREENS])
     w->id = i;
     g_signal_connect(w->widget, "realize", G_CALLBACK(video_widget_realize_cb), w);
     set_up_window(loop, w->widget, i);
-    w->crop_left = crop_left;
-    w->crop_right = crop_right;
     post_tee_pipeline(GST_PIPELINE(pipeline), tee, w->sink, crop_left, crop_right);
     crop_left += option_width;
     crop_right -= option_width;

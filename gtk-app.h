@@ -24,16 +24,9 @@ static GOptionEntry entries[] =
 };
 
 typedef struct window_s {
-  int crop_left;
-  int crop_right;
   GstElement *sink;
   XID xid;
   GtkWidget *widget;
   int id;
 } window_t;
-
-typedef struct windows_s {
-  int input_width;
-  window_t windows[MAX_SCREENS];
-} windows_t;
 
