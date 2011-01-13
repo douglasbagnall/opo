@@ -67,6 +67,5 @@ gtk-app::
 	  $(GTK_LINKS) -o $@ $(GTK_APP)
 
 debug:
-	#touch gtk-app.c
 	make -B CFLAGS='-g -fno-inline -fno-inline-functions -fno-omit-frame-pointer -O0' gtk-app
 

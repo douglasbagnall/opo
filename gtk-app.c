@@ -21,7 +21,7 @@ post_tee_pipeline(GstPipeline *pipeline, GstElement *tee, GstElement *sink,
       "right", crop_right,
       NULL);
 
-  gst_bin_add_many (GST_BIN(pipeline),
+  gst_bin_add_many(GST_BIN(pipeline),
       queue,
       crop,
       sink,
@@ -208,7 +208,7 @@ static GstElement *
 gstreamer_start(GMainLoop *loop, window_t windows[MAX_SCREENS])
 {
   int input_width = option_screens * option_width;
-  //crop _left/_right are amount to cut, not coordinate of cut 
+  //crop _left/_right are amount to cut, not coordinate of cut
   int crop_left = 0;
   int crop_right = input_width - option_width;
 
