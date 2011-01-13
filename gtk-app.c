@@ -54,18 +54,17 @@ pre_tee_pipeline(GstPipeline *pipeline, int width, int height){
 
   GstElement *tee = gst_element_factory_make ("tee", NULL);
   GstCaps *caps;
-  caps = gst_caps_new_simple("video/x-raw-rgb",
+  caps = gst_caps_new_simple("video/x-raw-yuv",
       "width", G_TYPE_INT, width,
       "height", G_TYPE_INT, height,
       NULL);
-  gst_caps_merge(caps, gst_caps_new_simple("video/x-raw-yuv",
+  gst_caps_merge(caps, gst_caps_new_simple("video/x-raw-rgb",
           "width", G_TYPE_INT, width,
           "height", G_TYPE_INT, height,
           NULL));
 
   gst_bin_add_many(GST_BIN(pipeline),
       src,
-      caps,
       tee,
       NULL);
 
