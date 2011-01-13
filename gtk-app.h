@@ -1,11 +1,11 @@
 #define QUOTE_(x) #x
 #define QUOTE(x) QUOTE_(x)
 
-static gboolean option_fake = TRUE; /* Should eventually be FALSE !*/
+static gint option_fake = 0;
 static gboolean option_fullscreen = FALSE;
-static gint option_screens = 3;
-static gint option_width = 320;
-static gint option_height = 320;
+static gint option_screens = 4;
+static gint option_width = 160;
+static gint option_height = 480;
 
 #define MAX_SCREENS 8
 #define MIN_SCREENS 1
@@ -13,8 +13,8 @@ static gint option_height = 320;
 
 static GOptionEntry entries[] =
 {
-  { "fake-source", 0, 0, G_OPTION_ARG_NONE, &option_fake,
-    "use videotestsrc", NULL },
+  { "fake-source", 'F', 0, G_OPTION_ARG_INT, &option_fake,
+    "use videotestsrc (1, 2 ->different patterns)", NULL },
   { "full-screen", 'f', 0, G_OPTION_ARG_NONE, &option_fullscreen, "run full screen", NULL },
   { "width", 'w', 0, G_OPTION_ARG_INT, &option_width, "width of each screen", NULL },
   { "height", 'h', 0, G_OPTION_ARG_INT, &option_height, "height of screen", NULL },

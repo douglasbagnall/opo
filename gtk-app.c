@@ -41,6 +41,17 @@ pre_tee_pipeline(GstPipeline *pipeline, int width, int height){
   }
   char * src_name = (option_fake) ? "videotestsrc" : "v4l2src";
   GstElement *src = gst_element_factory_make(src_name, NULL);
+  if (option_fake == 2){//set some properties for an interesting picture
+    g_object_set(G_OBJECT(src),
+        "pattern",  14,
+        "kt2", 0,
+        "kx2", 3,
+        "ky2", 3,
+        "kt", 3,
+        "kxy", 2,
+        NULL);
+  }
+
   GstElement *tee = gst_element_factory_make ("tee", NULL);
   GstCaps *caps;
   caps = gst_caps_new_simple("video/x-raw-rgb",
@@ -208,7 +219,7 @@ gstreamer_start(GMainLoop *loop, window_t windows[MAX_SCREENS])
   for (i = 0; i < option_screens; i++){
     window_t *w = windows + i;
     w->widget = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    w->sink = gst_element_factory_make("ximagesink", NULL);
+    w->sink = gst_element_factory_make("xvimagesink", NULL);
     w->id = i;
     g_signal_connect(w->widget, "realize", G_CALLBACK(video_widget_realize_cb), w);
     set_up_window(loop, w->widget, i);
