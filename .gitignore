@@ -4,3 +4,4 @@
 .emacs*
 *.o
 *.so
+gtk-app
