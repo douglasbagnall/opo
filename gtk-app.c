@@ -74,19 +74,6 @@ static void hide_mouse(GtkWidget *widget){
 }
 
 
-static GstPipeline *
-make_multi_pipeline(windows_t *windows, int count)
-{
-  GstPipeline *pipeline = GST_PIPELINE(gst_pipeline_new("e_wha"));
-  GstElement *tee = pre_tee_pipeline(pipeline, windows->input_width, option_height);
-  int i;
-  for (i = 0; i < count; i++){
-    window_t *w = &windows->windows[i];
-    GstElement *sink = w->sink;
-    post_tee_pipeline(pipeline, tee, sink, w->crop_left, w->crop_right);
-  }
-  return pipeline;
-}
 
 static GstBusSyncReply
 sync_bus_call(GstBus *bus, GstMessage *msg, gpointer data)
@@ -96,17 +83,15 @@ sync_bus_call(GstBus *bus, GstMessage *msg, gpointer data)
       (! gst_structure_has_name(msg->structure, "prepare-xwindow-id"))){
    return GST_BUS_PASS;
   }
-  windows_t *windows = (windows_t *)data;
-  windows->prepared++;
-  g_print("Got prepare-xwindow-id msg. for %d/%d screens\n",
-      windows->prepared, option_screens);
+  window_t *windows = (window_t *)data;
+  g_print("Got prepare-xwindow-id msg. \n");
   //connect this one up with the right window.
   GstElement *sink = GST_ELEMENT(GST_MESSAGE_SRC(msg));
   int done = 0;
 
   g_print("found sink %p\n", sink);
   for (int i = 0; i < option_screens; i++){
-    window_t *w = &windows->windows[i];
+    const window_t *w = windows + i;
     if (w->sink == sink){
       gst_x_overlay_set_xwindow_id(GST_X_OVERLAY(sink), w->xid);
       g_print("connected sink %d to window %lu\n", i, w->xid);
@@ -163,17 +148,9 @@ destroy_cb(GtkWidget * widget, gpointer data)
 static void
 video_widget_realize_cb(GtkWidget *widget, gpointer data)
 {
-  windows_t *windows = (windows_t *)data;
-  int r = windows->realised;
-  if (r < MAX_SCREENS){
-    window_t *w = &windows->windows[r];
-    w->xid = GDK_WINDOW_XID(GDK_WINDOW(widget->window));
-    g_print("realised window %d with XID %lu\n", r, w->xid);
-  }
-  else {
-    g_print("wtf, there seem to be %d windows!\n", r);
-  }
-  windows->realised++;
+  window_t *w = (window_t *)data;
+  w->xid = GDK_WINDOW_XID(GDK_WINDOW(widget->window));
+  g_print("realised window %d with XID %lu\n", w->id, w->xid);
   hide_mouse(widget);
 }
 
@@ -216,42 +193,34 @@ set_up_window(GMainLoop *loop, GtkWidget *window, int screen_no){
   hide_mouse(window);
 }
 
-
-
 static GstElement *
-gstreamer_start(GMainLoop *loop)
+gstreamer_start(GMainLoop *loop, window_t windows[MAX_SCREENS])
 {
-  windows_t windows;
-  windows.realised = 0;
-  windows.requested = 0;
-  windows.prepared = 0;
-  windows.input_width = option_screens * option_width;
+  int input_width = option_screens * option_width;
+  //crop _left/_right are amount to cut, not coordinate of cut 
+  int crop_left = 0;
+  int crop_right = input_width - option_width;
+
+  GstElement *pipeline = gst_pipeline_new("e_wha");
+  GstElement *tee = pre_tee_pipeline(GST_PIPELINE(pipeline), input_width, option_height);
 
   int i;
-  int crop_left = 0;
-  int crop_right = windows.input_width - option_width;
-
   for (i = 0; i < option_screens; i++){
-    GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    g_signal_connect(window, "realize",
-        G_CALLBACK(video_widget_realize_cb), &windows);
-    /* set up sink here */
-    GstElement *sink = gst_element_factory_make("ximagesink", NULL);
-    set_up_window(loop, window, i);
-    window_t *w = &windows.windows[i];
-    w->widget = window;
-    w->sink = sink;
+    window_t *w = windows + i;
+    w->widget = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    w->sink = gst_element_factory_make("ximagesink", NULL);
+    w->id = i;
+    g_signal_connect(w->widget, "realize", G_CALLBACK(video_widget_realize_cb), w);
+    set_up_window(loop, w->widget, i);
     w->crop_left = crop_left;
     w->crop_right = crop_right;
+    post_tee_pipeline(GST_PIPELINE(pipeline), tee, w->sink, crop_left, crop_right);
     crop_left += option_width;
     crop_right -= option_width;
   }
 
-  GstElement *pipeline = (GstElement *)make_multi_pipeline(&windows, option_screens);
-
   GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline));
-  gst_bus_set_sync_handler(bus, (GstBusSyncHandler)sync_bus_call, pipeline);
-  //gst_bus_add_watch(bus, (GstBusFunc)bus_call, &windows);
+  gst_bus_set_sync_handler(bus, (GstBusSyncHandler)sync_bus_call, windows);
   gst_object_unref(bus);
 
   gst_element_set_state(pipeline, GST_STATE_PLAYING);
@@ -268,6 +237,7 @@ gstreamer_stop(GstElement *pipeline)
 gint main (gint argc, gchar *argv[])
 {
   //initialise threads before any gtk stuff (because not using gtk_init)
+  static window_t windows[MAX_SCREENS];
   g_type_init();
   g_thread_init(NULL);
   /*this is more complicated than plain gtk_init/gst_init, so that options from
@@ -297,7 +267,7 @@ gint main (gint argc, gchar *argv[])
 
   GMainLoop *loop = g_main_loop_new(NULL, FALSE);
 
-  GstElement *pipeline = gstreamer_start(loop);
+  GstElement *pipeline = gstreamer_start(loop, windows);
 
   g_main_loop_run(loop);
 

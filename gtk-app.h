@@ -29,12 +29,10 @@ typedef struct window_s {
   GstElement *sink;
   XID xid;
   GtkWidget *widget;
+  int id;
 } window_t;
 
 typedef struct windows_s {
-  int realised;
-  int requested;
-  int prepared;
   int input_width;
   window_t windows[MAX_SCREENS];
 } windows_t;
