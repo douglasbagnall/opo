@@ -175,22 +175,31 @@ set_up_window(GMainLoop *loop, GtkWidget *window, int screen_no){
   }
 
   GdkScreen * screen = gdk_screen_get_default();
-  int width = gdk_screen_get_width(screen);
-  /* XXX placement heuristic is crap: this is better:
+  int x, y;
 
-       int monitors = gdk_screen_get_primary_monitor(GdkScreen *screen);
+  if (option_force_multiscreen){
+    /*Ask gtk to find the approriate monitor. But first warn if
+     the request seems broken. */
+    int monitors = gdk_screen_get_n_monitors(screen);
+    if (screen_no >= monitors){
+      g_print("Asking for %d out of %d monitors! expect unhappiness!",
+          screen_no, monitors);
+    }
+    GdkRectangle monitor_shape;
+    gdk_screen_get_monitor_geometry(screen, screen_no, &monitor_shape);
+    x = monitor_shape.x + 1;
+    y = monitor_shape.y + 1;
+  }
+  else {
+    /*simple placement heuristic, places windows evenly across display.
+      This should work with equally sized monitors/projectors, and allows
+      testing on a single monitor. */
+    int width = gdk_screen_get_width(screen);
+    x = (width / option_screens) * screen_no + 1;
+    y = 50;
+  }
 
-       void gdk_screen_get_monitor_geometry(GdkScreen *screen,
-                                            gint monitor_num,
-                                            GdkRectangle *dest);
-      or
-
-       gint gdk_screen_get_monitor_at_point(GdkScreen *screen,
-                                             gint x,
-                                             gint y);
-  */
-  int x = (width / option_screens) * screen_no + 1;
-  gtk_window_move(GTK_WINDOW(window), x, 50);
+  gtk_window_move(GTK_WINDOW(window), x, y);
   g_print("putting window %d at %d\n", screen_no, x);
 
   // attach key press signal to key press callback
