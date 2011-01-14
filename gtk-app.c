@@ -148,11 +148,12 @@ key_press_event_cb(GtkWidget *widget, GdkEventKey *event, gpointer data)
 }
 
 static void
-destroy_cb(GtkWidget * widget, gpointer data)
+destroy_cb(GtkWidget *widget, gpointer data)
 {
   GMainLoop *loop = (GMainLoop*) data;
   g_print("Window destroyed\n");
   g_main_loop_quit(loop);
+  gtk_widget_destroy(widget);
 }
 
 static void
