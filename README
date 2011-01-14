@@ -1,0 +1,31 @@
+4 Way Video Machine
+===================
+
+This is a Gstreamer application that splits a video stream into 4.
+
+It is designed for exhibiting syncronised video.
+
+Dependencies
+============
+
+Gstreamer, including dev packages.
+
+
+Compiling
+=========
+
+Try `make`.
+
+Importing video
+===============
+
+XXX
+
+Copyright and License
+=====================
+
+Copyright 2011 Douglas Bagnall
+
+Portions copyright Gstreamer developers.
+
+Licensed under the Gnu General Public License Version 3 (see COPYING).
