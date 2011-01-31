@@ -186,6 +186,7 @@ set_up_window(GMainLoop *loop, window_t *w, int screen_no){
     screen = gdk_display_get_screen(gdk_display_get_default(),
                                     screen_no
     );
+    g_print("putting window %d on screen %p\n", screen_no, screen);
     gtk_window_set_screen(GTK_WINDOW(window), screen);
   }
   else {
