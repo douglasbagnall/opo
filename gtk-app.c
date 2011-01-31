@@ -167,7 +167,13 @@ video_widget_realize_cb(GtkWidget *widget, gpointer data)
 
 
 static void
-set_up_window(GMainLoop *loop, GtkWidget *window, int screen_no){
+set_up_window(GMainLoop *loop, window_t *w, int screen_no){
+  GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  w->widget = window;
+  w->sink = gst_element_factory_make("xvimagesink", NULL);
+  w->id = screen_no;
+  g_signal_connect(w->widget, "realize", G_CALLBACK(video_widget_realize_cb), w);
+
   static const GdkColor black = {0, 0, 0, 0};
   gtk_window_set_default_size(GTK_WINDOW(window), option_width, option_height);
 
@@ -180,6 +186,7 @@ set_up_window(GMainLoop *loop, GtkWidget *window, int screen_no){
     screen = gdk_display_get_screen(gdk_display_get_default(),
                                     screen_no
     );
+    gtk_window_set_screen(GTK_WINDOW(window), screen);
   }
   else {
     screen = gdk_screen_get_default();
@@ -235,11 +242,7 @@ gstreamer_start(GMainLoop *loop, window_t windows[MAX_SCREENS])
   int i;
   for (i = 0; i < option_screens; i++){
     window_t *w = windows + i;
-    w->widget = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    w->sink = gst_element_factory_make("xvimagesink", NULL);
-    w->id = i;
-    g_signal_connect(w->widget, "realize", G_CALLBACK(video_widget_realize_cb), w);
-    set_up_window(loop, w->widget, i);
+    set_up_window(loop, w, i);
     post_tee_pipeline(GST_PIPELINE(pipeline), tee, w->sink, crop_left, crop_right);
     crop_left += option_width;
     crop_right -= option_width;
