@@ -43,7 +43,7 @@ pre_tee_pipeline(GstPipeline *pipeline, int width, int height){
   GstElement *src = gst_element_factory_make(src_name, NULL);
   if (option_fake == 2){//set some properties for an interesting picture
     g_object_set(G_OBJECT(src),
-        "pattern",  14,
+        "pattern",  14, //"zone-plate"
         "kt2", 0,
         "kx2", 3,
         "ky2", 3,
@@ -174,8 +174,16 @@ set_up_window(GMainLoop *loop, GtkWidget *window, int screen_no){
   if (option_fullscreen){
     gtk_window_fullscreen(GTK_WINDOW(window));
   }
+  GdkScreen * screen;
 
-  GdkScreen * screen = gdk_screen_get_default();
+  if (option_use_x_screens){
+    screen = gdk_display_get_screen(gdk_display_get_default(),
+                                    screen_no
+    );
+  }
+  else {
+    screen = gdk_screen_get_default();
+  }
   int x, y;
 
   if (option_force_multiscreen){
