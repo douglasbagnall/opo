@@ -180,14 +180,19 @@ set_up_window(GMainLoop *loop, window_t *w, int screen_no){
   if (option_fullscreen){
     gtk_window_fullscreen(GTK_WINDOW(window));
   }
+  int xscreen_no;
   GdkScreen * screen;
-  if (option_x_screens > 1){
-    int xscreen_no = screen_no / option_x_screens;
+  if (option_x_screens <= 1){
+    screen = gdk_screen_get_default();
+    /*Xscreen number might not be 0, but 0 is right assumption for
+      calculations below.*/
+    xscreen_no = 0;
+  }
+  else{
+    xscreen_no = screen_no * option_x_screens / option_screens;
     char display[sizeof(":0.00")];
     g_snprintf(display, sizeof(display), ":0.%d", xscreen_no);
-    screen = gdk_display_get_screen(gdk_display_get_default(),
-        xscreen_no
-    );
+    screen = gdk_display_get_screen(gdk_display_get_default(), xscreen_no);
     g_print("putting window %d on screen %s (%p)\n",
         screen_no, display, screen);
     gtk_window_set_screen(GTK_WINDOW(window), screen);
@@ -195,21 +200,13 @@ set_up_window(GMainLoop *loop, window_t *w, int screen_no){
         "display", display,
         NULL);
   }
-  else {
-    screen = gdk_screen_get_default();
-  }
   int x, y;
-
+  int monitors = gdk_screen_get_n_monitors(screen);
+  int monitor_no = screen_no % monitors;
   if (option_force_multiscreen){
-    /*Ask gtk to find the approriate monitor. But first warn if
-     the request seems broken.
-
-    XXX currently not good with multiple x screens */
-    int monitors = gdk_screen_get_n_monitors(screen);
-    if (screen_no >= monitors){
-      g_print("Asking for %d out of %d monitors! expect unhappiness!",
-          screen_no, monitors);
-    }
+    /*Ask gtk to find the appropriate monitor (assuming each Xscreen has the
+      same number of monitors).
+    */
     GdkRectangle monitor_shape;
     gdk_screen_get_monitor_geometry(screen, screen_no, &monitor_shape);
     x = monitor_shape.x + 1;
@@ -220,7 +217,7 @@ set_up_window(GMainLoop *loop, window_t *w, int screen_no){
       This should work with equally sized monitors/projectors, and allows
       testing on a single monitor. */
     int width = gdk_screen_get_width(screen);
-    x = (width / option_screens) * screen_no + 1;
+    x = (width / (option_screens/ option_x_screens)) * monitor_no + 1;
     y = 50;
   }
 
@@ -294,7 +291,11 @@ gint main (gint argc, gchar *argv[])
   }
   g_option_context_free(ctx);
   /*sanitise options*/
-  if (option_screens > MAX_SCREENS)
+  if (option_x_screens > MAX_X_SCREENS)
+    option_x_screens = MAX_X_SCREENS;
+  if (option_x_screens < MIN_X_SCREENS)
+    option_x_screens = MIN_X_SCREENS;
+  if (option_x_screens > MAX_X_SCREENS)
     option_screens = MAX_SCREENS;
   if (option_screens < MIN_SCREENS)
     option_screens = MIN_SCREENS;
