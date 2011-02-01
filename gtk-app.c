@@ -64,6 +64,12 @@ pad_added_cb (GstElement *decodebin, GstPad *pad, GstElement *tee)
   gst_object_unref(tee_pad);
 }
 
+static void
+drained_cb (GstElement *decodebin, GstPad *pad, GstElement *dummy)
+{
+  g_print("drained\n");
+}
+
 static GstElement *
 pre_tee_pipeline(GstPipeline *pipeline){
   if (pipeline == NULL){
@@ -118,6 +124,9 @@ pre_tee_pipeline(GstPipeline *pipeline){
     //Can't link it yet!
     g_signal_connect(src, "pad-added",
         G_CALLBACK(pad_added_cb), tee);
+
+    g_signal_connect(src, "drained",
+        G_CALLBACK(drained_cb), NULL);
   }
   else{
     GstCaps *caps = make_good_caps();
