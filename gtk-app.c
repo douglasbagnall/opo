@@ -47,6 +47,11 @@ pre_tee_pipeline(GstPipeline *pipeline, int width, int height){
         "location", option_content,
         NULL);
     src = gst_element_factory_make("decodebin2", NULL);
+    gst_bin_add_many(GST_BIN(pipeline),
+        filesrc,
+        src,
+        NULL);
+    gst_element_link(filesrc, src);
   }
   else {
     char * src_name = (option_fake) ? "videotestsrc" : "v4l2src";
@@ -61,6 +66,7 @@ pre_tee_pipeline(GstPipeline *pipeline, int width, int height){
           "kxy", 2,
           NULL);
     }
+    gst_bin_add(GST_BIN(pipeline), src);
   }
 
   GstElement *tee = gst_element_factory_make ("tee", NULL);
@@ -74,10 +80,7 @@ pre_tee_pipeline(GstPipeline *pipeline, int width, int height){
           "height", G_TYPE_INT, height,
           NULL));
 
-  gst_bin_add_many(GST_BIN(pipeline),
-      src,
-      tee,
-      NULL);
+  gst_bin_add(GST_BIN(pipeline), tee);
 
   gst_element_link_filtered(src,
       tee,
