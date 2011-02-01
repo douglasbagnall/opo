@@ -261,7 +261,6 @@ set_up_window(GMainLoop *loop, window_t *w, int screen_no){
   }
   int x, y;
   int monitors = gdk_screen_get_n_monitors(screen);
-  int monitor_no = screen_no % monitors;
   if (option_force_multiscreen){
     /*Ask gtk to find the appropriate monitor (assuming each Xscreen has the
       same number of monitors).
@@ -274,9 +273,10 @@ set_up_window(GMainLoop *loop, window_t *w, int screen_no){
   else {
     /*simple placement heuristic, places windows evenly across display.
       This should work with equally sized monitors/projectors, and allows
-      testing on a single monitor. */
-    int width = gdk_screen_get_width(screen);
-    x = (width / (option_screens/ option_x_screens)) * monitor_no + 1;
+      testing on a single monitor.
+    */
+    int full_screen_width = gdk_screen_get_width(screen) * monitors;
+    x = screen_no * (full_screen_width / (option_screens / option_x_screens)) + 1;
     y = 50;
   }
 
