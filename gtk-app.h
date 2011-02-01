@@ -8,6 +8,7 @@ static gint option_x_screens = 1;
 static gint option_screens = 4;
 static gint option_width = 160;
 static gint option_height = 480;
+static char *option_content = NULL;
 
 #define MAX_SCREENS 8
 #define MIN_SCREENS 1
@@ -28,6 +29,7 @@ static GOptionEntry entries[] =
   { "height", 'h', 0, G_OPTION_ARG_INT, &option_height, "height of screen", NULL },
   { "screens", 's', 0, G_OPTION_ARG_INT, &option_screens, "Use this many screens, (max "
     QUOTE(MAX_SCREENS) ")", "S" },
+  { "content", 'c', 0, G_OPTION_ARG_FILENAME, &option_content, "Content video file", NULL },
   { NULL, 0, 0, 0, NULL, NULL, NULL }
 };
 

@@ -39,17 +39,28 @@ pre_tee_pipeline(GstPipeline *pipeline, int width, int height){
   if (pipeline == NULL){
     pipeline = GST_PIPELINE(gst_pipeline_new("wha_pipeline"));
   }
-  char * src_name = (option_fake) ? "videotestsrc" : "v4l2src";
-  GstElement *src = gst_element_factory_make(src_name, NULL);
-  if (option_fake == 2){//set some properties for an interesting picture
-    g_object_set(G_OBJECT(src),
-        "pattern",  14, //"zone-plate"
-        "kt2", 0,
-        "kx2", 3,
-        "ky2", 3,
-        "kt", 3,
-        "kxy", 2,
+  GstElement *src;
+  if (option_content) {
+    //src = gst_element_factory_make('uridecodebin', NULL);
+    GstElement *filesrc = gst_element_factory_make("filesrc", NULL);
+    g_object_set(G_OBJECT(filesrc),
+        "location", option_content,
         NULL);
+    src = gst_element_factory_make("decodebin2", NULL);
+  }
+  else {
+    char * src_name = (option_fake) ? "videotestsrc" : "v4l2src";
+    src = gst_element_factory_make(src_name, NULL);
+    if (option_fake == 2){//set some properties for an interesting picture
+      g_object_set(G_OBJECT(src),
+          "pattern",  14, //"zone-plate"
+          "kt2", 0,
+          "kx2", 3,
+          "ky2", 3,
+          "kt", 3,
+          "kxy", 2,
+          NULL);
+    }
   }
 
   GstElement *tee = gst_element_factory_make ("tee", NULL);
