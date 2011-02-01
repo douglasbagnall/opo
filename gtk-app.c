@@ -6,7 +6,19 @@
 #include <gdk/gdkx.h>
 #include "gtk-app.h"
 
-
+static GstCaps *
+make_good_caps(){
+  GstCaps *caps;
+  caps = gst_caps_new_simple("video/x-raw-yuv",
+      "width", G_TYPE_INT, option_screens * option_width,
+      "height", G_TYPE_INT, option_height,
+      NULL);
+  gst_caps_merge(caps, gst_caps_new_simple("video/x-raw-rgb",
+          "width", G_TYPE_INT, option_screens * option_width,
+          "height", G_TYPE_INT, option_height,
+          NULL));
+  return caps;
+}
 
 static void
 post_tee_pipeline(GstPipeline *pipeline, GstElement *tee, GstElement *sink,
@@ -34,24 +46,46 @@ post_tee_pipeline(GstPipeline *pipeline, GstElement *tee, GstElement *sink,
       NULL);
 }
 
+
+static void
+pad_added_cb (GstElement *decodebin, GstPad *pad, GstElement *tee)
+{
+  GstCaps *caps = make_good_caps();
+  GstPad *tee_pad = gst_element_get_static_pad(tee, "sink");
+  gst_pad_set_caps(tee_pad, caps);
+  gst_pad_link(pad, tee_pad);
+  gst_object_unref(tee_pad);
+}
+
 static GstElement *
-pre_tee_pipeline(GstPipeline *pipeline, int width, int height){
+pre_tee_pipeline(GstPipeline *pipeline){
   if (pipeline == NULL){
     pipeline = GST_PIPELINE(gst_pipeline_new("wha_pipeline"));
   }
   GstElement *src;
   if (option_content) {
-    //src = gst_element_factory_make('uridecodebin', NULL);
-    GstElement *filesrc = gst_element_factory_make("filesrc", NULL);
-    g_object_set(G_OBJECT(filesrc),
-        "location", option_content,
+    char *url;
+    if (g_str_has_prefix(option_content, "/")){
+      url = g_strconcat("file://",
+          option_content,
+          NULL);
+    }
+    else {
+      char *cwd = g_get_current_dir();
+      url = g_strconcat("file://",
+          cwd,
+          option_content,
+          NULL);
+      g_free(cwd);
+    }
+
+    src = gst_element_factory_make("uridecodebin", NULL);
+    g_object_set(G_OBJECT(src),
+        "uri", url,
         NULL);
-    src = gst_element_factory_make("decodebin2", NULL);
-    gst_bin_add_many(GST_BIN(pipeline),
-        filesrc,
-        src,
-        NULL);
-    gst_element_link(filesrc, src);
+    g_free(url);
+
+    gst_bin_add(GST_BIN(pipeline), src);
   }
   else {
     char * src_name = (option_fake) ? "videotestsrc" : "v4l2src";
@@ -66,25 +100,24 @@ pre_tee_pipeline(GstPipeline *pipeline, int width, int height){
           "kxy", 2,
           NULL);
     }
-    gst_bin_add(GST_BIN(pipeline), src);
   }
 
-  GstElement *tee = gst_element_factory_make ("tee", NULL);
-  GstCaps *caps;
-  caps = gst_caps_new_simple("video/x-raw-yuv",
-      "width", G_TYPE_INT, width,
-      "height", G_TYPE_INT, height,
-      NULL);
-  gst_caps_merge(caps, gst_caps_new_simple("video/x-raw-rgb",
-          "width", G_TYPE_INT, width,
-          "height", G_TYPE_INT, height,
-          NULL));
+  GstElement *tee = gst_element_factory_make("tee", NULL);
 
+  gst_bin_add(GST_BIN(pipeline), src);
   gst_bin_add(GST_BIN(pipeline), tee);
 
-  gst_element_link_filtered(src,
-      tee,
-      caps);
+  if (option_content) {
+    //Can't link it yet!
+    g_signal_connect(src, "pad-added",
+        G_CALLBACK(pad_added_cb), tee);
+  }
+  else{
+    GstCaps *caps = make_good_caps();
+    gst_element_link_filtered(src,
+        tee,
+        caps);
+  }
   return tee;
 }
 
@@ -257,7 +290,7 @@ gstreamer_start(GMainLoop *loop, window_t windows[MAX_SCREENS])
   int crop_right = input_width - option_width;
 
   GstElement *pipeline = gst_pipeline_new("e_wha");
-  GstElement *tee = pre_tee_pipeline(GST_PIPELINE(pipeline), input_width, option_height);
+  GstElement *tee = pre_tee_pipeline(GST_PIPELINE(pipeline));
 
   int i;
   for (i = 0; i < option_screens; i++){
