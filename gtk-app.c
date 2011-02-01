@@ -183,7 +183,7 @@ set_up_window(GMainLoop *loop, window_t *w, int screen_no){
   GdkScreen * screen;
   if (option_x_screens > 1){
     int xscreen_no = screen_no / option_x_screens;
-    char display[sizeof(":0.0")];
+    char display[sizeof(":0.00")];
     g_snprintf(display, sizeof(display), ":0.%d", xscreen_no);
     screen = gdk_display_get_screen(gdk_display_get_default(),
         xscreen_no
