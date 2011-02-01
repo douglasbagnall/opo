@@ -263,12 +263,18 @@ set_up_window(GMainLoop *loop, window_t *w, int screen_no){
         NULL);
   }
   int x, y;
-  int per_screen_no = screen_no % (option_screens / option_x_screens);
+  int windows_per_xscreen = option_screens / option_x_screens;
+  int window_no = screen_no % windows_per_xscreen;
+  int monitors = gdk_screen_get_n_monitors(xscreen);
   if (option_force_multiscreen){
     /*Ask gtk to find the appropriate monitor (assuming each Xscreen has the
       same number of monitors). */
+    if (window_no >= monitors){
+      g_print("asking for monitor %d which does not exist! (monitors %d)\n",
+          window_no, monitors);
+    }
     GdkRectangle monitor_shape;
-    gdk_screen_get_monitor_geometry(xscreen, per_screen_no, &monitor_shape);
+    gdk_screen_get_monitor_geometry(xscreen, window_no, &monitor_shape);
     x = monitor_shape.x + 1;
     y = monitor_shape.y + 1;
   }
@@ -277,10 +283,9 @@ set_up_window(GMainLoop *loop, window_t *w, int screen_no){
       This should work with equally sized monitors/projectors, and allows
       testing on a single monitor.
     */
-      int full_screen_width = gdk_screen_get_width(xscreen);
-      int monitors = gdk_screen_get_n_monitors(xscreen);
-      x = per_screen_no * (full_screen_width / monitors) + 1;
-      y = 1;
+    int full_screen_width = gdk_screen_get_width(xscreen);
+    x = window_no * (full_screen_width / windows_per_xscreen) + 1;
+    y = 1;
   }
 
   gtk_window_move(GTK_WINDOW(window), x, y);
