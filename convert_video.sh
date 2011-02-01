@@ -21,15 +21,19 @@ HEIGHT=768
 
 $GST_LAUNCH videomixer name=mix ! ffmpegcolorspace ! jpegenc ! avimux ! filesink location=mjpeg.avi \
     \
-    uridecodebin uri=file://$FILE1 ! deinterlace  ! videoscale ! video/x-raw-yuv, width=$WIDTH, height=$HEIGHT \
-    ! videobox border-alpha=0 left=0 right=$((-3 * $WIDTH))  ! mix. \
+    uridecodebin uri=file://$FILE1 ! deinterlace  ! videoscale \
+    ! video/x-raw-yuv, width=$WIDTH, height=$HEIGHT \
+    ! videobox border-alpha=0  alpha=1  left=0 right=$((-3 * $WIDTH))  ! mix. \
     \
-    uridecodebin uri=file://$FILE2 ! deinterlace  ! videoscale ! video/x-raw-yuv, width=$WIDTH, height=$HEIGHT \
-    ! videobox border-alpha=0 left=$((-1 * $WIDTH)) right=$((-2 * $WIDTH)) ! mix. \
+    uridecodebin uri=file://$FILE2 ! deinterlace  ! videoscale \
+    ! video/x-raw-yuv, width=$WIDTH, height=$HEIGHT \
+    ! videobox border-alpha=0 alpha=1 left=$((-1 * $WIDTH)) right=$((-2 * $WIDTH)) ! mix. \
     \
-    uridecodebin uri=file://$FILE3 ! deinterlace  ! videoscale ! video/x-raw-yuv, width=$WIDTH, height=$HEIGHT \
-    ! videobox border-alpha=0 left=$((-2 * $WIDTH)) right=$((-1 * $WIDTH)) ! mix. \
+    uridecodebin uri=file://$FILE3 ! deinterlace  ! videoscale \
+    ! video/x-raw-yuv, width=$WIDTH, height=$HEIGHT \
+    ! videobox border-alpha=0  alpha=1  left=$((-2 * $WIDTH)) right=$((-1 * $WIDTH)) ! mix. \
     \
-    uridecodebin uri=file://$FILE4 ! deinterlace  ! videoscale ! video/x-raw-yuv, width=$WIDTH, height=$HEIGHT \
-    ! videobox border-alpha=0 left=$((-3 * $WIDTH)) right=0 ! mix. \
+    uridecodebin uri=file://$FILE4 ! deinterlace  ! videoscale \
+    ! video/x-raw-yuv, width=$WIDTH, height=$HEIGHT \
+    ! videobox border-alpha=0  alpha=1  left=$((-3 * $WIDTH)) right=0 ! mix. \
 
