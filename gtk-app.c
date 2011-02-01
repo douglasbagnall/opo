@@ -59,13 +59,9 @@ post_tee_pipeline(GstPipeline *pipeline, GstElement *tee, GstElement *sink,
 static void
 pad_added_cb (GstElement *decodebin, GstPad *pad, GstElement *tee)
 {
-  //GstCaps *caps = make_good_caps();
   GstPad *tee_pad = gst_element_get_static_pad(tee, "sink");
-  //gst_pad_set_caps(tee_pad, caps);
   gst_pad_link(pad, tee_pad);
   gst_object_unref(tee_pad);
-  //gtk_window_set_default_size(GTK_WINDOW(window), option_width, option_height);
-  
 }
 
 static GstElement *
