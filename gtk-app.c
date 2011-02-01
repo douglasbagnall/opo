@@ -240,9 +240,9 @@ set_up_window(GMainLoop *loop, window_t *w, int screen_no){
     gtk_window_fullscreen(GTK_WINDOW(window));
   }
   int xscreen_no;
-  GdkScreen * screen;
+  GdkScreen * xscreen;
   if (option_x_screens <= 1){
-    screen = gdk_screen_get_default();
+    xscreen = gdk_screen_get_default();
     /*Xscreen number might not be 0, but 0 is right assumption for
       calculations below.*/
     xscreen_no = 0;
@@ -251,22 +251,19 @@ set_up_window(GMainLoop *loop, window_t *w, int screen_no){
     xscreen_no = screen_no * option_x_screens / option_screens;
     char display[sizeof(":0.00")];
     g_snprintf(display, sizeof(display), ":0.%d", xscreen_no);
-    screen = gdk_display_get_screen(gdk_display_get_default(), xscreen_no);
-    g_print("putting window %d on screen %s (%p)\n",
-        screen_no, display, screen);
-    gtk_window_set_screen(GTK_WINDOW(window), screen);
+    xscreen = gdk_display_get_screen(gdk_display_get_default(), xscreen_no);
+    gtk_window_set_screen(GTK_WINDOW(window), xscreen);
     g_object_set(G_OBJECT(w->sink),
         "display", display,
         NULL);
   }
   int x, y;
-  int monitors = gdk_screen_get_n_monitors(screen);
+  int per_screen_no = screen_no % (option_screens / option_x_screens);
   if (option_force_multiscreen){
     /*Ask gtk to find the appropriate monitor (assuming each Xscreen has the
-      same number of monitors).
-    */
+      same number of monitors). */
     GdkRectangle monitor_shape;
-    gdk_screen_get_monitor_geometry(screen, screen_no, &monitor_shape);
+    gdk_screen_get_monitor_geometry(xscreen, per_screen_no, &monitor_shape);
     x = monitor_shape.x + 1;
     y = monitor_shape.y + 1;
   }
@@ -275,13 +272,15 @@ set_up_window(GMainLoop *loop, window_t *w, int screen_no){
       This should work with equally sized monitors/projectors, and allows
       testing on a single monitor.
     */
-    int full_screen_width = gdk_screen_get_width(screen) * monitors;
-    x = screen_no * (full_screen_width / (option_screens / option_x_screens)) + 1;
-    y = 50;
+      int full_screen_width = gdk_screen_get_width(xscreen);
+      int monitors = gdk_screen_get_n_monitors(xscreen);
+      x = per_screen_no * (full_screen_width / monitors) + 1;
+      y = 1;
   }
 
   gtk_window_move(GTK_WINDOW(window), x, y);
-  g_print("putting window %d at %d\n", screen_no, x);
+    g_print("putting window %d on screen :0.%d at %d,%d\n",
+	    screen_no, xscreen_no, x, y);
 
   // attach key press signal to key press callback
   gtk_widget_set_events(window, GDK_KEY_PRESS_MASK);
