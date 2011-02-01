@@ -9,14 +9,23 @@
 static GstCaps *
 make_good_caps(){
   GstCaps *caps;
-  caps = gst_caps_new_simple("video/x-raw-yuv",
+  if (option_autosize && option_content){
+    //automatically find size
+    caps = gst_caps_new_simple("video/x-raw-yuv",
+        NULL);
+    gst_caps_merge(caps, gst_caps_new_simple("video/x-raw-rgb",
+            NULL));
+  }
+  else {
+    caps = gst_caps_new_simple("video/x-raw-yuv",
       "width", G_TYPE_INT, option_screens * option_width,
-      "height", G_TYPE_INT, option_height,
-      NULL);
-  gst_caps_merge(caps, gst_caps_new_simple("video/x-raw-rgb",
-          "width", G_TYPE_INT, option_screens * option_width,
-          "height", G_TYPE_INT, option_height,
-          NULL));
+        "height", G_TYPE_INT, option_height,
+        NULL);
+    gst_caps_merge(caps, gst_caps_new_simple("video/x-raw-rgb",
+            "width", G_TYPE_INT, option_screens * option_width,
+            "height", G_TYPE_INT, option_height,
+            NULL));
+  }
   return caps;
 }
 
@@ -55,6 +64,8 @@ pad_added_cb (GstElement *decodebin, GstPad *pad, GstElement *tee)
   gst_pad_set_caps(tee_pad, caps);
   gst_pad_link(pad, tee_pad);
   gst_object_unref(tee_pad);
+  //gtk_window_set_default_size(GTK_WINDOW(window), option_width, option_height);
+  
 }
 
 static GstElement *
@@ -222,6 +233,7 @@ set_up_window(GMainLoop *loop, window_t *w, int screen_no){
   g_signal_connect(w->widget, "realize", G_CALLBACK(video_widget_realize_cb), w);
 
   static const GdkColor black = {0, 0, 0, 0};
+  //XXX need to resize once video size is known
   gtk_window_set_default_size(GTK_WINDOW(window), option_width, option_height);
 
   if (option_fullscreen){
@@ -350,6 +362,15 @@ gint main (gint argc, gchar *argv[])
     option_width = MAX_PIXELS;
   if (option_height > MAX_PIXELS)
     option_height = MAX_PIXELS;
+  /*setting width, height <= 0 makes sizing automatic (default) */
+  if (option_width <= 0){
+    option_width = DEFAULT_WIDTH;
+    option_autosize = 1;
+  }
+  if (option_height <= 0){
+    option_height = DEFAULT_HEIGHT;
+    option_autosize = 1;
+  }
 
   GMainLoop *loop = g_main_loop_new(NULL, FALSE);
 

@@ -1,13 +1,18 @@
 #define QUOTE_(x) #x
 #define QUOTE(x) QUOTE_(x)
 
+//default per-screen size
+#define DEFAULT_WIDTH (640 / 4)
+#define DEFAULT_HEIGHT 480
+
 static gint option_fake = 0;
 static gboolean option_force_multiscreen = FALSE;
 static gboolean option_fullscreen = FALSE;
 static gint option_x_screens = 1;
 static gint option_screens = 4;
-static gint option_width = 160;
-static gint option_height = 480;
+static gint option_width = 0;
+static gint option_height = 0;
+static gint option_autosize = 0; //not actually exposed to commandline
 static char *option_content = NULL;
 
 #define MAX_SCREENS 8
