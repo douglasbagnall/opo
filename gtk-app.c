@@ -181,13 +181,19 @@ set_up_window(GMainLoop *loop, window_t *w, int screen_no){
     gtk_window_fullscreen(GTK_WINDOW(window));
   }
   GdkScreen * screen;
-
-  if (option_use_x_screens){
+  if (option_x_screens > 1){
+    int xscreen_no = screen_no / option_x_screens;
+    char display[sizeof(":0.0")];
+    g_snprintf(display, sizeof(display), ":0.%d", xscreen_no);
     screen = gdk_display_get_screen(gdk_display_get_default(),
-                                    screen_no
+        xscreen_no
     );
-    g_print("putting window %d on screen %p\n", screen_no, screen);
+    g_print("putting window %d on screen %s (%p)\n",
+        screen_no, display, screen);
     gtk_window_set_screen(GTK_WINDOW(window), screen);
+    g_object_set(G_OBJECT(w->sink),
+        "display", display,
+        NULL);
   }
   else {
     screen = gdk_screen_get_default();
@@ -196,7 +202,9 @@ set_up_window(GMainLoop *loop, window_t *w, int screen_no){
 
   if (option_force_multiscreen){
     /*Ask gtk to find the approriate monitor. But first warn if
-     the request seems broken. */
+     the request seems broken.
+
+    XXX currently not good with multiple x screens */
     int monitors = gdk_screen_get_n_monitors(screen);
     if (screen_no >= monitors){
       g_print("Asking for %d out of %d monitors! expect unhappiness!",
