@@ -64,28 +64,28 @@ pre_tee_pipeline(GstPipeline *pipeline){
   }
   GstElement *src;
   if (option_content) {
-    char *url;
+    char *uri;
     if (g_str_has_prefix(option_content, "/")){
-      url = g_strconcat("file://",
+      uri = g_strconcat("file://",
           option_content,
           NULL);
     }
     else {
       char *cwd = g_get_current_dir();
-      url = g_strconcat("file://",
+      uri = g_strconcat("file://",
           cwd,
+          "/",
           option_content,
           NULL);
       g_free(cwd);
     }
+    g_print("uri is '%s'\n", uri);
 
     src = gst_element_factory_make("uridecodebin", NULL);
     g_object_set(G_OBJECT(src),
-        "uri", url,
+        "uri", uri,
         NULL);
-    g_free(url);
-
-    gst_bin_add(GST_BIN(pipeline), src);
+    g_free(uri);
   }
   else {
     char * src_name = (option_fake) ? "videotestsrc" : "v4l2src";
