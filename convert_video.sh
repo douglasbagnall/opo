@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 GST_LAUNCH='gst-launch-0.10 -e'
 
@@ -12,16 +12,25 @@ FILE2=/home/douglas/sparrow/content/dv-big/capture1098061.dv
 FILE3=/home/douglas/sparrow/content/dv-big/capture-xx068.dv
 FILE4=/home/douglas/sparrow/content/dv-big/capture1098066.dv
 
-
-
 WIDTH=1024
 HEIGHT=768
 
+TMP_FILE=/tmp/fresh.avi
+
+if (( $1 )); then
+    WIDTH="$1"
+    if (( "$2" )); then
+        HEIGHT="$2"
+    else
+        HEIGHT=$(( $WIDTH * 3 / 4 ))
+    fi
+fi
+echo "converting to mjpeg at 4 x ($WIDTH, $HEIGHT), 25 fps"
 
 
 $GST_LAUNCH videomixer name=mix background=1 \
     ! ffmpegcolorspace ! jpegenc idct-method=2 ! avimux \
-    ! filesink location=mjpeg-4x${WIDTH}x${HEIGHT}.avi \
+    ! filesink location=$TMP_FILE \
     \
     uridecodebin uri=file://$FILE1 ! deinterlace  ! videoscale \
     ! video/x-raw-yuv, width=$WIDTH, height=$HEIGHT \
@@ -39,3 +48,4 @@ $GST_LAUNCH videomixer name=mix background=1 \
     ! video/x-raw-yuv, width=$WIDTH, height=$HEIGHT \
     ! videobox border-alpha=0  alpha=1  left=$((-3 * $WIDTH)) right=0 ! mix. \
 
+mencoder $TMP_FILE -o mjpeg-4x${WIDTH}x${HEIGHT}.avi -ovc copy -fps 25 -ofps 25
