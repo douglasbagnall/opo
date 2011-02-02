@@ -77,15 +77,17 @@ post_tee_pipeline(GstPipeline *pipeline, GstElement *tee, GstElement *sink,
 static void
 pad_added_cb (GstElement *decodebin, GstPad *pad, GstElement *tee)
 {
+  g_print("decodebin %p pad %p tee %p\n", decodebin, pad, tee);
   GstPad *tee_pad = gst_element_get_static_pad(tee, "sink");
   gst_pad_link(pad, tee_pad);
   gst_object_unref(tee_pad);
 }
 
 static void
-drained_cb (GstElement *decodebin, GstPad *pad, GstElement *dummy)
+drained_cb (GstElement *decodebin, GstPad *pad, GstElement *filesrc)
 {
-  gst_element_seek_simple(decodebin,
+  g_print("decodebin %p pad %p filesrc %p\n", decodebin, pad, filesrc);
+  gst_element_seek_simple(filesrc,
       GST_FORMAT_DEFAULT,
       GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT,
       0);
@@ -99,29 +101,16 @@ pre_tee_pipeline(GstPipeline *pipeline){
     pipeline = GST_PIPELINE(gst_pipeline_new("wha_pipeline"));
   }
   GstElement *src;
+  GstElement *filesrc;
   if (option_content) {
-    char *uri;
-    if (g_str_has_prefix(option_content, "/")){
-      uri = g_strconcat("file://",
-          option_content,
-          NULL);
-    }
-    else {
-      char *cwd = g_get_current_dir();
-      uri = g_strconcat("file://",
-          cwd,
-          "/",
-          option_content,
-          NULL);
-      g_free(cwd);
-    }
-    g_print("uri is '%s'\n", uri);
-
-    src = gst_element_factory_make("uridecodebin", NULL);
-    g_object_set(G_OBJECT(src),
-        "uri", uri,
+    filesrc = gst_element_factory_make("filesrc", NULL);
+    gst_bin_add(GST_BIN(pipeline), filesrc);
+    g_object_set(G_OBJECT(filesrc),
+        "location", option_content,
         NULL);
-    g_free(uri);
+    src = gst_element_factory_make("decodebin2", NULL);
+    gst_bin_add(GST_BIN(pipeline), src);
+    gst_element_link(filesrc, src);
   }
   else {
     src = make_fake_source();
@@ -129,17 +118,15 @@ pre_tee_pipeline(GstPipeline *pipeline){
   }
 
   GstElement *tee = gst_element_factory_make("tee", NULL);
-
-  gst_bin_add(GST_BIN(pipeline), src);
   gst_bin_add(GST_BIN(pipeline), tee);
 
   if (option_content) {
+    g_print("src %p tee %p filesrc %p\n", src, tee, filesrc);
     //Can't link it yet!
     g_signal_connect(src, "pad-added",
         G_CALLBACK(pad_added_cb), tee);
-
     g_signal_connect(src, "drained",
-        G_CALLBACK(drained_cb), NULL);
+        G_CALLBACK(drained_cb), filesrc);
   }
   else{
     GstCaps *caps = make_good_caps();
