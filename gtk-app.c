@@ -18,7 +18,7 @@ make_good_caps(){
   }
   else {
     caps = gst_caps_new_simple("video/x-raw-yuv",
-      "width", G_TYPE_INT, option_screens * option_width,
+        "width", G_TYPE_INT, option_screens * option_width,
         "height", G_TYPE_INT, option_height,
         NULL);
     gst_caps_merge(caps, gst_caps_new_simple("video/x-raw-rgb",
@@ -30,7 +30,7 @@ make_good_caps(){
 }
 
 static void
-post_tee_pipeline(GstPipeline *pipeline, GstElement *tee, GstElement *sink,
+post_tee_pipeline(GstBin *bin, GstElement *tee, GstElement *sink,
     int crop_left, int crop_right){
   GstElement *queue = gst_element_factory_make("queue", NULL);
   GstElement *crop = gst_element_factory_make("videocrop", NULL);
@@ -42,7 +42,7 @@ post_tee_pipeline(GstPipeline *pipeline, GstElement *tee, GstElement *sink,
       "right", crop_right,
       NULL);
 
-  gst_bin_add_many(GST_BIN(pipeline),
+  gst_bin_add_many(bin,
       queue,
       crop,
       sink,
@@ -57,90 +57,14 @@ post_tee_pipeline(GstPipeline *pipeline, GstElement *tee, GstElement *sink,
 
 
 static void
-pad_added_cb (GstElement *decodebin, GstPad *pad, GstElement *tee)
+about_to_finish_cb(GstElement *pipeline, char *uri)
 {
-  GstPad *tee_pad = gst_element_get_static_pad(tee, "sink");
-  gst_pad_link(pad, tee_pad);
-  gst_object_unref(tee_pad);
+  g_object_set(G_OBJECT(pipeline),
+      "uri", uri,
+      NULL);
+  g_print("starting again with %s\n", uri);
 }
 
-static void
-drained_cb (GstElement *decodebin, GstPad *pad, GstElement *dummy)
-{
-  gst_element_seek_simple(decodebin,
-      GST_FORMAT_DEFAULT,
-      GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT,
-      0);
-  g_print("drained\n");
-  //exit(0);
-}
-
-static GstElement *
-pre_tee_pipeline(GstPipeline *pipeline){
-  if (pipeline == NULL){
-    pipeline = GST_PIPELINE(gst_pipeline_new("wha_pipeline"));
-  }
-  GstElement *src;
-  if (option_content) {
-    char *uri;
-    if (g_str_has_prefix(option_content, "/")){
-      uri = g_strconcat("file://",
-          option_content,
-          NULL);
-    }
-    else {
-      char *cwd = g_get_current_dir();
-      uri = g_strconcat("file://",
-          cwd,
-          "/",
-          option_content,
-          NULL);
-      g_free(cwd);
-    }
-    g_print("uri is '%s'\n", uri);
-
-    src = gst_element_factory_make("uridecodebin", NULL);
-    g_object_set(G_OBJECT(src),
-        "uri", uri,
-        NULL);
-    g_free(uri);
-  }
-  else {
-    char * src_name = (option_fake) ? "videotestsrc" : "v4l2src";
-    src = gst_element_factory_make(src_name, NULL);
-    if (option_fake == 2){//set some properties for an interesting picture
-      g_object_set(G_OBJECT(src),
-          "pattern",  14, //"zone-plate"
-          "kt2", 0,
-          "kx2", 3,
-          "ky2", 3,
-          "kt", 3,
-          "kxy", 2,
-          NULL);
-    }
-  }
-
-  GstElement *tee = gst_element_factory_make("tee", NULL);
-
-  gst_bin_add(GST_BIN(pipeline), src);
-  gst_bin_add(GST_BIN(pipeline), tee);
-
-  if (option_content) {
-    //Can't link it yet!
-    g_signal_connect(src, "pad-added",
-        G_CALLBACK(pad_added_cb), tee);
-
-    g_signal_connect(src, "drained",
-        G_CALLBACK(drained_cb), NULL);
-  }
-  else{
-    GstCaps *caps = make_good_caps();
-    gst_element_link_filtered(src,
-        tee,
-        caps);
-  }
-  return tee;
-}
 
 
 static void hide_mouse(GtkWidget *widget){
@@ -307,33 +231,120 @@ set_up_window(GMainLoop *loop, window_t *w, int screen_no){
   hide_mouse(window);
 }
 
-static GstElement *
-gstreamer_start(GMainLoop *loop, window_t windows[MAX_SCREENS])
-{
+static inline char *
+attempt_filename_to_uri(char *filename){
+  char *uri;
+  if (g_str_has_prefix(filename, "/")){
+    uri = g_strconcat("file://",
+        option_content,
+        NULL);
+  }
+  else {
+    char *cwd = g_get_current_dir();
+    uri = g_strconcat("file://",
+        cwd,
+        "/",
+        option_content,
+        NULL);
+    g_free(cwd);
+  }
+  return uri;
+}
+
+
+static GstPipeline *
+pre_tee_pipeline(){
+  GstPipeline *pipeline;
+  if (option_content) {
+    char *uri = attempt_filename_to_uri(option_content);
+    g_print("uri is '%s'\n", uri);
+    pipeline = GST_PIPELINE(gst_element_factory_make("playbin2", NULL));
+    g_object_set(G_OBJECT(pipeline),
+        "uri", uri,
+        NULL);
+    g_signal_connect(pipeline, "about-to-finish",
+        G_CALLBACK(about_to_finish_cb), uri);
+    //g_free(uri);
+  }
+  else {
+    pipeline = GST_PIPELINE(gst_pipeline_new("test_pipeline"));
+    char * src_name = (option_fake) ? "videotestsrc" : "v4l2src";
+    GstElement *src = gst_element_factory_make(src_name, "videosource");
+    if (option_fake == 2){//set some properties for an interesting picture
+      g_object_set(G_OBJECT(src),
+          "pattern",  14, //"zone-plate"
+          "kt2", 0,
+          "kx2", 3,
+          "ky2", 3,
+          "kt", 3,
+          "kxy", 2,
+          NULL);
+    }
+    gst_bin_add(GST_BIN(pipeline), src);
+  }
+  return pipeline;
+}
+
+static GstBin *
+tee_bin(GMainLoop *loop, window_t *windows){
+  GstBin *bin = GST_BIN(gst_bin_new("teebin"));
+  GstElement *tee = gst_element_factory_make("tee", NULL);
+  gst_bin_add(bin, tee);
+  GstPad *teesink = gst_element_get_pad(tee, "sink");
+  GstPad *ghost = gst_ghost_pad_new("sink", teesink);
+  gst_element_add_pad(GST_ELEMENT(bin), ghost);
+  //XXX unref pad?
+
+  /* construct the various arms
+     crop _left/_right are amount to cut, not coordinate of cut
+  */
   int input_width = option_screens * option_width;
-  //crop _left/_right are amount to cut, not coordinate of cut
   int crop_left = 0;
   int crop_right = input_width - option_width;
-
-  GstElement *pipeline = gst_pipeline_new("e_wha");
-  GstElement *tee = pre_tee_pipeline(GST_PIPELINE(pipeline));
 
   int i;
   for (i = 0; i < option_screens; i++){
     window_t *w = windows + i;
     set_up_window(loop, w, i);
-    post_tee_pipeline(GST_PIPELINE(pipeline), tee, w->sink, crop_left, crop_right);
+    post_tee_pipeline(bin, tee, w->sink, crop_left, crop_right);
     crop_left += option_width;
     crop_right -= option_width;
   }
+  return bin;
+}
 
-  GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline));
+
+
+static GstPipeline *
+gstreamer_start(GMainLoop *loop, window_t windows[MAX_SCREENS])
+{
+  GstPipeline *pipeline = pre_tee_pipeline();
+  GstBin *teebin = tee_bin(loop, windows);
+
+
+  if (option_content) {
+    g_object_set(G_OBJECT(pipeline),
+        "video-sink", GST_ELEMENT(teebin),
+        NULL);
+  }
+  else {
+    gst_bin_add(GST_BIN(pipeline), GST_ELEMENT(teebin));
+    GstElement *videosrc = gst_bin_get_by_name(GST_BIN(pipeline), "videosource");
+    GstCaps *caps = make_good_caps();
+    gst_element_link_filtered(videosrc, GST_ELEMENT(teebin), caps);
+    //XXX unref caps?
+  }
+
+  //xxx
+
+  GstBus *bus = gst_pipeline_get_bus(pipeline);
   gst_bus_set_sync_handler(bus, (GstBusSyncHandler)sync_bus_call, windows);
   gst_object_unref(bus);
 
-  gst_element_set_state(pipeline, GST_STATE_PLAYING);
+  gst_element_set_state(GST_ELEMENT(pipeline), GST_STATE_PLAYING);
   return pipeline;
 }
+
 
 static void
 gstreamer_stop(GstElement *pipeline)
@@ -388,10 +399,10 @@ gint main (gint argc, gchar *argv[])
 
   GMainLoop *loop = g_main_loop_new(NULL, FALSE);
 
-  GstElement *pipeline = gstreamer_start(loop, windows);
+  GstPipeline *pipeline = gstreamer_start(loop, windows);
 
   g_main_loop_run(loop);
 
-  gstreamer_stop(pipeline);
+  gstreamer_stop(GST_ELEMENT(pipeline));
   return 0;
 }
