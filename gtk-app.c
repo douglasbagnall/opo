@@ -29,23 +29,6 @@ make_good_caps(){
   return caps;
 }
 
-static GstElement *
-make_fake_source(){
-  char *src_name = (option_fake) ? "videotestsrc" : "v4l2src";
-  GstElement *src = gst_element_factory_make(src_name, NULL);
-  if (option_fake == 2){//set some properties for an interesting picture
-    g_object_set(G_OBJECT(src),
-        "pattern",  14, //"zone-plate"
-        "kt2", 0,
-        "kx2", 3,
-        "ky2", 3,
-        "kt", 3,
-        "kxy", 2,
-        NULL);
-  }
-  return src;
-}
-
 
 static void
 post_tee_pipeline(GstBin *bin, GstElement *tee, GstElement *sink,
