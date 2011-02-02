@@ -67,7 +67,12 @@ pad_added_cb (GstElement *decodebin, GstPad *pad, GstElement *tee)
 static void
 drained_cb (GstElement *decodebin, GstPad *pad, GstElement *dummy)
 {
+  gst_element_seek_simple(decodebin,
+      GST_FORMAT_DEFAULT,
+      GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT,
+      0);
   g_print("drained\n");
+  //exit(0);
 }
 
 static GstElement *
