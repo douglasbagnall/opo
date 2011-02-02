@@ -19,7 +19,9 @@ HEIGHT=768
 
 
 
-$GST_LAUNCH videomixer name=mix ! ffmpegcolorspace ! jpegenc ! avimux ! filesink location=mjpeg.avi \
+$GST_LAUNCH videomixer name=mix background=1 \
+    ! ffmpegcolorspace ! jpegenc idct-method=2 ! avimux \
+    ! filesink location=mjpeg-4x${WIDTH}x${HEIGHT}.avi \
     \
     uridecodebin uri=file://$FILE1 ! deinterlace  ! videoscale \
     ! video/x-raw-yuv, width=$WIDTH, height=$HEIGHT \
