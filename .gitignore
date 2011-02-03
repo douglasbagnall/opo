@@ -4,5 +4,5 @@
 .emacs*
 *.o
 *.so
-gtk-app
+opo
 *.avi

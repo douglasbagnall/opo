@@ -4,7 +4,7 @@
 #include <gst/interfaces/xoverlay.h>
 #include <gdk/gdk.h>
 #include <gdk/gdkx.h>
-#include "gtk-app.h"
+#include "opo.h"
 
 static GstCaps *
 make_good_caps(){
