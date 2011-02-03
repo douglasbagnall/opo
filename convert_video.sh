@@ -14,6 +14,7 @@ FILE4=/home/douglas/sparrow/content/dv-big/capture1098066.dv
 
 WIDTH=1024
 HEIGHT=768
+USE_VP8=true
 
 TMP_FILE=/tmp/fresh.avi
 
@@ -25,11 +26,19 @@ if (( $1 )); then
         HEIGHT=$(( $WIDTH * 3 / 4 ))
     fi
 fi
-echo "converting to mjpeg at 4 x ($WIDTH, $HEIGHT), 25 fps"
+echo "Size is 4 x ($WIDTH, $HEIGHT), 25 fps"
+
+if [[ $USE_VP8 ]]; then
+    encoder='vp8enc quality=7'
+    prefix='vp8'
+else
+    encoder='jpegenc idct-method=2'
+    prefix='mjpeg'
+fi
 
 
 $GST_LAUNCH videomixer name=mix background=1 \
-    ! ffmpegcolorspace ! jpegenc idct-method=2 ! avimux \
+    ! ffmpegcolorspace ! $encoder ! avimux \
     ! filesink location=$TMP_FILE \
     \
     uridecodebin uri=file://$FILE1 ! deinterlace  ! videoscale \
@@ -48,4 +57,4 @@ $GST_LAUNCH videomixer name=mix background=1 \
     ! video/x-raw-yuv, width=$WIDTH, height=$HEIGHT \
     ! videobox border-alpha=0  alpha=1  left=$((-3 * $WIDTH)) right=0 ! mix. \
 
-mencoder $TMP_FILE -o mjpeg-4x${WIDTH}x${HEIGHT}.avi -ovc copy -fps 25 -ofps 25
+mencoder $TMP_FILE -o $prefix-4x${WIDTH}x${HEIGHT}.avi -ovc copy -fps 25 -ofps 25
