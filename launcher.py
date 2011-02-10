@@ -178,7 +178,13 @@ class Launcher:
             _add_advanced(fc_set)
 
 
-        self.create_name = gtk.Entry()
+        self.create_name = gtk.FileChooserButton(title="Save as")
+        c = self.create_name
+        c.set_action(gtk.FILE_CHOOSER_ACTION_SAVE)
+        c.set_current_folder_uri(self.choose_dir)
+        #c.set_current_name("Untitled document")
+        c.set_current_name("hello.avi")
+        c.set_do_overwrite_confirmation(True)
         hb = gtk.HBox()
         name_label = gtk.Label("name")
         hb.pack_start(name_label, False)
