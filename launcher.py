@@ -107,9 +107,10 @@ class Launcher:
             video_name = self.video.rsplit('/', 1)[1]
             self.heading.set_markup('<span size="larger"><b>%s</b> is ready to play</span>' %
                                     video_name)
+            self.play_now.set_sensitive(True)
         else:
             self.heading.set_markup('<span size="larger">No video selected</span>')
-
+            self.play_now.set_sensitive(False)
 
     def make_window(self):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
@@ -130,7 +131,6 @@ class Launcher:
         h.set_line_wrap(True)
         _add(h)
         self.heading = h
-        self.update_heading()
 
         self.play_now = gtk.Button("_Play now")
         self.play_now.connect("clicked", self.play, None)
@@ -187,8 +187,11 @@ class Launcher:
     def __init__(self):
         self.read_rc()
         self.make_window()
-        self.switch_mode(None, 'auto')
-
+        self.update_heading()
+        if self.video is not None:
+            self.switch_mode(None, 'auto')
+        else:
+            self.switch_mode(None, 'choose')
 
 
     def destroy(self, widget, data=None):
