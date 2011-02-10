@@ -63,8 +63,8 @@ class Launcher:
         if self.countdown > 0:
             self.radio_auto.set_label("Play _automatically in %s seconds" % self.countdown)
             return True
-        print "blast off"
         self.tick_id = None
+        self.play(None)
         return False
 
     def choose_file(self, widget, *data):
