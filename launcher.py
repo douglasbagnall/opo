@@ -2,6 +2,7 @@
 import pygtk
 pygtk.require('2.0')
 import gtk, gobject
+import subprocess
 
 from ConfigParser import SafeConfigParser, Error as CPError
 
@@ -18,6 +19,10 @@ class Launcher:
     tiemout = TIMEOUT
     def play(self, widget, data=None):
         print "play %s: %s" % (widget, data)
+        cmd = ['./opo', '-s', str(SCREENS), '-c', self.video]
+        print cmd
+        subprocess.call(cmd)
+
 
     def switch_mode(self, widget, mode):
         if mode == self.mode:
@@ -82,7 +87,7 @@ class Launcher:
 
         self.create_dir = _get('Paths', 'create_dir', CREATE_DIR)
         self.choose_dir = _get('Paths', 'choose_dir', CHOOSE_DIR)
-        self.video = _get('Video', 'last_played')
+        self.video = _get('Paths', 'last_played')
         self.timeout = int(_get('Misc', 'timeout', TIMEOUT))
         self.screens = int(_get('Misc', 'screens', SCREENS))
 

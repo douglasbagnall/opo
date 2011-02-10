@@ -252,12 +252,19 @@ attempt_filename_to_uri(char *filename){
   return uri;
 }
 
-
 static GstPipeline *
 pre_tee_pipeline(){
   GstPipeline *pipeline;
   if (option_content) {
-    char *uri = attempt_filename_to_uri(option_content);
+    char *uri;
+    if( g_str_has_prefix(option_content, "file://") ||
+        g_str_has_prefix(option_content, "http://") /* || others */
+    ){
+      uri = option_content;
+    }
+    else{
+      uri = attempt_filename_to_uri(option_content);
+    }
     g_print("uri is '%s'\n", uri);
     pipeline = GST_PIPELINE(gst_element_factory_make("playbin2", NULL));
     g_object_set(G_OBJECT(pipeline),
