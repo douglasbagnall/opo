@@ -14,7 +14,7 @@ CREATE_DIR = '.'
 RC_FILE = 'opo.rc'
 
 class Launcher:
-    mode = None
+    is_auto = None
     tick_id = None
     tiemout = TIMEOUT
     def play(self, widget, data=None):
@@ -24,41 +24,38 @@ class Launcher:
         subprocess.call(cmd)
 
 
-    def switch_mode(self, widget, mode):
-        mode = ('auto' if widget.get_active() else 'manual')
-        if mode == self.mode:
-            print '...'
+    def on_toggle_auto(self, widget, data=None):
+        auto = widget.get_active()
+        if auto == self.is_auto:
+            print "spurious auto toggle"
             return
-        print "switch mode to %s" % (mode)
-        self.mode = mode
-        for k, v in self.mode_widgets.items():
-            for x in v:
-                x.set_sensitive(k == mode)
-        if mode == 'auto':
+        self.is_auto = auto
+        for x in self.advanced_widgets:
+            x.set_sensitive(not auto)
+        if auto:
             self.start_countdown()
-        elif mode == 'manual':
+        else:
             self.stop_countdown()
             self.chooser.activate()
-        else:
-            print "wtf: mode is '%s'" % mode
-
 
     def start_countdown(self):
         self.countdown = self.timeout
-        if self.tick_id is None: #otherwise, somehow, two ticks are going at once.
+        if self.tick_id is None: #lest, somehow, two ticks try going at once.
             self.tick_id = gobject.timeout_add(1000, self.tick)
 
     def stop_countdown(self):
         if self.tick_id is not None:
             gobject.source_remove(self.tick_id)
             self.tick_id = None
-        self.countdown = self.timeout
-        self.mode_switch.set_label("Play _automatically in %s seconds" % self.countdown)
+        self.mode_switch.set_label("Play _automatically in %s seconds" % self.timeout)
 
     def tick(self):
         self.countdown -= 1
         if self.countdown > 0:
-            self.mode_switch.set_label("Play _automatically in %s seconds" % self.countdown)
+            if self.countdown == 1:
+                self.mode_switch.set_label("Play _automatically in one second!")
+            else:
+                self.mode_switch.set_label("Play _automatically in %s seconds" % self.countdown)
             return True
         self.tick_id = None
         self.play(None)
@@ -118,12 +115,12 @@ class Launcher:
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_border_width(15)
         self.vbox = gtk.VBox(False, 3)
-        self.mode_widgets = {'auto': [], 'manual': []}
+        self.advanced_widgets = []
+
         _add = self.vbox.pack_start
-        def _add2(widget, mode=None):
+        def _add_advanced(widget):
             self.vbox.pack_start(widget)
-            if mode is not None:
-                self.mode_widgets[mode].append(widget)
+            self.advanced_widgets.append(widget)
 
         def _sep():
             _add(gtk.HSeparator(), True, True, 5)
@@ -139,9 +136,9 @@ class Launcher:
         _add(self.play_now)
         _sep()
 
-        #auto
+        #auto toggle
         self.mode_switch = gtk.CheckButton("Play _automatically in %s seconds" % self.timeout)
-        self.mode_switch.connect("toggled", self.switch_mode, None)
+        self.mode_switch.connect("toggled", self.on_toggle_auto, None)
         _add(self.mode_switch)
         _sep()
 
@@ -157,8 +154,8 @@ class Launcher:
 
         chooser_lab.set_mnemonic_widget(self.chooser)
 
-        _add2(chooser_lab, 'manual')
-        _add2(self.chooser, 'manual')
+        _add_advanced(chooser_lab)
+        _add_advanced(self.chooser)
         _sep()
 
         #create another
@@ -166,7 +163,7 @@ class Launcher:
         nb.set_use_underline(True)
 
         nb.set_alignment(0, 0.5)
-        _add2(nb, 'manual')
+        _add_advanced(nb)
 
         self.screen_choosers = []
         for i in range(self.screens):
@@ -178,7 +175,8 @@ class Launcher:
             fc_set.pack_start(fcl, False)
             fc_set.pack_start(fc)
             self.screen_choosers.append(fc)
-            _add2(fc_set, 'manual')
+            _add_advanced(fc_set)
+
 
         self.create_name = gtk.Entry()
         hb = gtk.HBox()
@@ -186,13 +184,13 @@ class Launcher:
         hb.pack_start(name_label, False)
         hb.pack_start(self.create_name)
         nb.set_mnemonic_widget(self.create_name)
-        _add2(hb, 'manual')
+        _add_advanced(hb)
 
-        _add2(self.create_name, 'manual')
+        #_add_advanced(self.create_name)
 
         self.create_button = gtk.Button("_Go")
         self.create_button.connect("clicked", self.create_video, None)
-        _add2(self.create_button, 'manual')
+        _add_advanced(self.create_button)
 
         self.window.add(self.vbox)
         self.window.connect("destroy", self.destroy)
