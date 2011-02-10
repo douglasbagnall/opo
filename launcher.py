@@ -26,7 +26,6 @@ class Launcher:
 
     def switch_mode(self, widget, mode):
         mode = ('auto' if widget.get_active() else 'manual')
-
         if mode == self.mode:
             print '...'
             return
@@ -147,35 +146,48 @@ class Launcher:
         _sep()
 
         #choose another
-        nb = gtk.Label("Choose another set of videos")
-        nb.set_alignment(0, 0.5)
-        _add2(nb, 'manual')
-
+        chooser_lab = gtk.Label("Ch_oose another combined video (%s screens)" % self.screens)
+        chooser_lab.set_use_underline(True)
+        chooser_lab.set_alignment(0, 0.5)
         self.chooser = gtk.FileChooserButton(title="video")
         if self.choose_dir:
             self.chooser.set_current_folder(self.choose_dir)
         self.chooser.set_width_chars(40)
         self.chooser.connect('file-set', self.choose_file, None)
+
+        chooser_lab.set_mnemonic_widget(self.chooser)
+
+        _add2(chooser_lab, 'manual')
         _add2(self.chooser, 'manual')
         _sep()
 
         #create another
-        nb = gtk.Label("Construct a new video")
-        nb.set_alignment(0, 0.5)
-        _add2(nb, 'manual')
-        nb = gtk.Label("Choose %s video files to synchronise" % self.screens)
+        nb = gtk.Label("Construct a _new combined video out of %s video files" % self.screens)
+        nb.set_use_underline(True)
+
         nb.set_alignment(0, 0.5)
         _add2(nb, 'manual')
 
         self.screen_choosers = []
         for i in range(self.screens):
             fc = gtk.FileChooserButton(title="video %s" % i)
-            fc.set_label = "screen %s" % i
+            fcl = gtk.Label("Screen _%s" % (i + 1))
+            fcl.set_use_underline(True)
+            fcl.set_mnemonic_widget(fc)
+            fc_set = gtk.HBox()
+            fc_set.pack_start(fcl, False)
+            fc_set.pack_start(fc)
             self.screen_choosers.append(fc)
-            _add2(fc, 'manual')
+            _add2(fc_set, 'manual')
 
         self.create_name = gtk.Entry()
-        #self.create_name.set_label('name')
+        hb = gtk.HBox()
+        name_label = gtk.Label("name")
+        hb.pack_start(name_label, False)
+        hb.pack_start(self.create_name)
+        nb.set_mnemonic_widget(self.create_name)
+        _add2(hb, 'manual')
+
         _add2(self.create_name, 'manual')
 
         self.create_button = gtk.Button("_Go")
