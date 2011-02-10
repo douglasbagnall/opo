@@ -25,10 +25,11 @@ class Launcher:
 
 
     def switch_mode(self, widget, mode):
+        mode = ('auto' if widget.get_active() else 'manual')
+
         if mode == self.mode:
             print '...'
             return
-
         print "switch mode to %s" % (mode)
         self.mode = mode
         for k, v in self.mode_widgets.items():
@@ -36,10 +37,7 @@ class Launcher:
                 x.set_sensitive(k == mode)
         if mode == 'auto':
             self.start_countdown()
-        elif mode == 'create':
-            self.stop_countdown()
-        elif mode == 'choose':
-            print 'choosing!'
+        elif mode == 'manual':
             self.stop_countdown()
             self.chooser.activate()
         else:
@@ -56,12 +54,12 @@ class Launcher:
             gobject.source_remove(self.tick_id)
             self.tick_id = None
         self.countdown = self.timeout
-        self.radio_auto.set_label("Play _automatically in %s seconds" % self.countdown)
+        self.mode_switch.set_label("Play _automatically in %s seconds" % self.countdown)
 
     def tick(self):
         self.countdown -= 1
         if self.countdown > 0:
-            self.radio_auto.set_label("Play _automatically in %s seconds" % self.countdown)
+            self.mode_switch.set_label("Play _automatically in %s seconds" % self.countdown)
             return True
         self.tick_id = None
         self.play(None)
@@ -121,7 +119,7 @@ class Launcher:
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_border_width(15)
         self.vbox = gtk.VBox(False, 3)
-        self.mode_widgets = {'auto': [], 'choose': [], 'create': []}
+        self.mode_widgets = {'auto': [], 'manual': []}
         _add = self.vbox.pack_start
         def _add2(widget, mode=None):
             self.vbox.pack_start(widget)
@@ -143,46 +141,46 @@ class Launcher:
         _sep()
 
         #auto
-        self.radio_auto = gtk.RadioButton(None, "Play _automatically in %s seconds" % self.timeout)
-        self.radio_auto.connect("clicked", self.switch_mode, 'auto')
-        _add(self.radio_auto)
+        self.mode_switch = gtk.CheckButton("Play _automatically in %s seconds" % self.timeout)
+        self.mode_switch.connect("toggled", self.switch_mode, None)
+        _add(self.mode_switch)
         _sep()
 
         #choose another
-        self.radio_choose = gtk.RadioButton(self.radio_auto, "Ch_oose another video set")
-        self.radio_choose.connect("clicked", self.switch_mode, 'choose')
-        _add(self.radio_choose)
+        nb = gtk.Label("Choose another set of videos")
+        nb.set_alignment(0, 0.5)
+        _add2(nb, 'manual')
 
         self.chooser = gtk.FileChooserButton(title="video")
         if self.choose_dir:
             self.chooser.set_current_folder(self.choose_dir)
         self.chooser.set_width_chars(40)
         self.chooser.connect('file-set', self.choose_file, None)
-        _add2(self.chooser, 'choose')
+        _add2(self.chooser, 'manual')
         _sep()
 
         #create another
-        self.radio_create = gtk.RadioButton(self.radio_auto, "or construct a _new one")
-        self.radio_create.connect("clicked", self.switch_mode, 'create')
-        _add(self.radio_create)
+        nb = gtk.Label("Construct a new video")
+        nb.set_alignment(0, 0.5)
+        _add2(nb, 'manual')
         nb = gtk.Label("Choose %s video files to synchronise" % self.screens)
         nb.set_alignment(0, 0.5)
-        _add2(nb, 'create')
+        _add2(nb, 'manual')
 
         self.screen_choosers = []
         for i in range(self.screens):
             fc = gtk.FileChooserButton(title="video %s" % i)
             fc.set_label = "screen %s" % i
             self.screen_choosers.append(fc)
-            _add2(fc, 'create')
+            _add2(fc, 'manual')
 
         self.create_name = gtk.Entry()
         #self.create_name.set_label('name')
-        _add2(self.create_name, 'create')
+        _add2(self.create_name, 'manual')
 
         self.create_button = gtk.Button("_Go")
         self.create_button.connect("clicked", self.create_video, None)
-        _add2(self.create_button, 'create')
+        _add2(self.create_button, 'manual')
 
         self.window.add(self.vbox)
         self.window.connect("destroy", self.destroy)
@@ -193,10 +191,7 @@ class Launcher:
         self.read_rc()
         self.make_window()
         self.update_heading()
-        if self.video is not None:
-            self.switch_mode(None, 'auto')
-        else:
-            self.switch_mode(None, 'choose')
+        self.mode_switch.set_active(self.video is not None)
 
 
     def destroy(self, widget, data=None):
