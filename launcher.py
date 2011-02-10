@@ -108,11 +108,11 @@ class Launcher:
     def update_heading(self):
         if self.video is not None:
             video_name = self.video.rsplit('/', 1)[1]
-            self.heading.set_markup('<span size="larger"><b>%s</b> is ready to play</span>' %
+            self.heading.set_markup('<big><b>%s</b> is ready to play</big>' %
                                     video_name)
             self.play_now.set_sensitive(True)
         else:
-            self.heading.set_markup('<span size="larger">No video selected</span>')
+            self.heading.set_markup('<big>No video selected</big>')
             self.play_now.set_sensitive(False)
 
     def make_window(self):
