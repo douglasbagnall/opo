@@ -13,6 +13,7 @@ CHOOSE_DIR = '.'
 CREATE_DIR = '.'
 
 RC_FILE = 'opo.rc'
+AUTO_MODE = False
 
 def name_suggester(dir, base, suffix):
     from os.path import join, exists
@@ -246,7 +247,7 @@ class Launcher:
         self.read_rc()
         self.make_window()
         self.update_heading()
-        self.mode_switch.set_active(self.video is not None)
+        self.mode_switch.set_active(AUTO_MODE and self.video is not None)
 
 
     def destroy(self, widget, data=None):
