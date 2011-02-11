@@ -3,6 +3,7 @@ import pygtk
 pygtk.require('2.0')
 import gtk, gobject
 import subprocess
+import os
 
 from ConfigParser import SafeConfigParser, Error as CPError
 
@@ -12,6 +13,12 @@ CHOOSE_DIR = '.'
 CREATE_DIR = '.'
 
 RC_FILE = 'opo.rc'
+
+def join_video(output_file, input_files):
+    for f in input_files:
+        if fn is None or not os.path.exists(fn):
+            raise IOError
+
 
 class Launcher:
     is_auto = None
@@ -67,7 +74,10 @@ class Launcher:
         self.choose_dir = widget.get_current_folder()
 
     def create_video(self, widget, data=None):
-        print "would be creating video"
+        print "creating video !"
+        input_files = [x.get_filename() for x in self.screen_choosers]
+        output_file = self.create_name_field.get_text()
+        join_video(output_file, input_file)
 
     def read_rc(self):
         rc = SafeConfigParser()
