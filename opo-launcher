@@ -14,6 +14,15 @@ CREATE_DIR = '.'
 
 RC_FILE = 'opo.rc'
 
+def name_suggester(dir, base, suffix):
+    from os.path import join, exists
+    for i in range(1, 999):
+        name = "%s-%s.%s" % (base, i, suffix)
+        fullname = join(dir, name)
+        if not exists(fullname):
+            break
+    return fullname
+
 def join_video(output_file, input_files):
     for f in input_files:
         if fn is None or not os.path.exists(fn):
@@ -78,6 +87,25 @@ class Launcher:
         input_files = [x.get_filename() for x in self.screen_choosers]
         output_file = self.create_name_field.get_text()
         join_video(output_file, input_file)
+
+    def on_create_name(self, widget, data=None):
+        dialog = gtk.FileChooserDialog("Save as", action=gtk.FILE_CHOOSER_ACTION_SAVE,
+                                       buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
+                                        gtk.STOCK_OK, gtk.RESPONSE_ACCEPT)
+                                       )
+        dialog.set_do_overwrite_confirmation(True)
+        if self.choose_dir:
+            dialog.set_current_folder(self.choose_dir)
+
+        response = dialog.run()
+        filename = dialog.get_filename()
+        if response in (gtk.RESPONSE_ACCEPT, gtk.RESPONSE_OK):
+            directory, basename = os.path.split(filename)
+            self.choose_dir = directory
+            self.create_name_field.set_text(dialog.get_filename())
+        print response
+        dialog.destroy()
+
 
     def read_rc(self):
         rc = SafeConfigParser()
@@ -188,23 +216,24 @@ class Launcher:
             _add_advanced(fc_set)
 
 
-        self.create_name = gtk.FileChooserButton(title="Save as")
-        c = self.create_name
-        c.set_action(gtk.FILE_CHOOSER_ACTION_SAVE)
-        c.set_current_folder_uri(self.choose_dir)
-        #c.set_current_name("Untitled document")
-        c.set_current_name("hello.avi")
-        c.set_do_overwrite_confirmation(True)
+        self.create_name_field = gtk.Entry()
+        self.create_name_field.set_width_chars(40)
+        self.create_name_field.set_text(name_suggester(self.choose_dir, 'new', 'avi'))
+
+        self.create_name_chooser = gtk.Button(label="choose")
+        self.create_name_chooser.connect("clicked", self.on_create_name, None)
+
         hb = gtk.HBox()
-        name_label = gtk.Label("name")
+        name_label = gtk.Label("Save as")
         hb.pack_start(name_label, False)
-        hb.pack_start(self.create_name)
-        nb.set_mnemonic_widget(self.create_name)
+        hb.pack_start(self.create_name_field)
+        hb.pack_start(self.create_name_chooser)
+        nb.set_mnemonic_widget(self.screen_choosers[0])
         _add_advanced(hb)
 
         #_add_advanced(self.create_name)
 
-        self.create_button = gtk.Button("_Go")
+        self.create_button = gtk.Button("Create the new _video")
         self.create_button.connect("clicked", self.create_video, None)
         _add_advanced(self.create_button)
 
