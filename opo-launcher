@@ -3,7 +3,7 @@ import pygtk
 pygtk.require('2.0')
 import gtk, gobject
 import subprocess
-import os
+import os, sys
 
 from ConfigParser import SafeConfigParser, Error as CPError
 
@@ -35,16 +35,16 @@ class Launcher:
     tick_id = None
     tiemout = TIMEOUT
     def play(self, widget, data=None):
-        print "play %s: %s" % (widget, data)
+        print >> sys.stderr, "play %s: %s" % (widget, data)
         cmd = ['./opo', '-s', str(SCREENS), '-c', self.video]
-        print cmd
+        print >> sys.stderr, cmd
         subprocess.call(cmd)
 
 
     def on_toggle_auto(self, widget, data=None):
         auto = widget.get_active()
         if auto == self.is_auto:
-            print "spurious auto toggle"
+            print >> sys.stderr, "spurious auto toggle"
             return
         self.is_auto = auto
         for x in self.advanced_widgets:
@@ -84,7 +84,7 @@ class Launcher:
         self.choose_dir = widget.get_current_folder()
 
     def create_video(self, widget, data=None):
-        print "creating video !"
+        print >> sys.stderr, "creating video !"
         input_files = [x.get_filename() for x in self.screen_choosers]
         output_file = self.create_name_field.get_text()
         join_video(output_file, input_file)
@@ -104,7 +104,7 @@ class Launcher:
             directory, basename = os.path.split(filename)
             self.choose_dir = directory
             self.create_name_field.set_text(dialog.get_filename())
-        print response
+        print >> sys.stderr, response
         dialog.destroy()
 
 
@@ -115,7 +115,7 @@ class Launcher:
             try:
                 return rc.get(section, item)
             except CPError, e:
-                print e
+                print >> sys.stderr, e
                 return default
 
         self.create_dir = _get('Paths', 'create_dir', CREATE_DIR)
@@ -216,7 +216,7 @@ class Launcher:
             self.screen_choosers.append(fc)
             _add_advanced(fc_set)
 
-
+        #save_as box
         self.create_name_field = gtk.Entry()
         self.create_name_field.set_width_chars(40)
         self.create_name_field.set_text(name_suggester(self.choose_dir, 'new', 'avi'))
@@ -263,7 +263,7 @@ class Launcher:
 
 
     def destroy(self, widget, data=None):
-        print "bye"
+        print >> sys.stderr, "bye"
         self.write_rc()
         gtk.main_quit()
 
