@@ -232,7 +232,19 @@ class Launcher:
         nb.set_mnemonic_widget(self.screen_choosers[0])
         _add_advanced(hb)
 
-        #_add_advanced(self.create_name)
+        #width/height boxes
+        hb = gtk.HBox()
+        self.width_field = gtk.Entry()
+        self.height_field = gtk.Entry()
+        self.width_field.set_width_chars(5)
+        self.height_field.set_width_chars(5)
+        lw = gtk.Label("Pixel size of each screen:  width")
+        lh = gtk.Label(" height")
+        hb.pack_start(lw, False)
+        hb.pack_start(self.width_field)
+        hb.pack_start(lh, False)
+        hb.pack_start(self.height_field)
+        _add_advanced(hb)
 
         self.create_button = gtk.Button("Create the new _video")
         self.create_button.connect("clicked", self.create_video, None)
