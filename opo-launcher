@@ -8,6 +8,8 @@ import os, sys
 from ConfigParser import SafeConfigParser, Error as CPError
 
 SCREENS = 4
+SCREEN_WIDTH = 1024
+SCREEN_HEIGHT = 768
 TIMEOUT = 20
 CHOOSE_DIR = '.'
 CREATE_DIR = '.'
@@ -39,7 +41,6 @@ class Launcher:
         cmd = ['./opo', '-s', str(SCREENS), '-c', self.video]
         print >> sys.stderr, cmd
         subprocess.call(cmd)
-
 
     def on_toggle_auto(self, widget, data=None):
         auto = widget.get_active()
@@ -123,6 +124,8 @@ class Launcher:
         self.video = _get('Paths', 'last_played')
         self.timeout = int(_get('Misc', 'timeout', TIMEOUT))
         self.screens = int(_get('Misc', 'screens', SCREENS))
+        self.default_width = int(_get('Misc', 'screen_width', SCREEN_WIDTH))
+        self.default_height = int(_get('Misc', 'screen_height', SCREEN_HEIGHT))
 
     def write_rc(self):
         rc = SafeConfigParser()
@@ -234,16 +237,22 @@ class Launcher:
 
         #width/height boxes
         hb = gtk.HBox()
-        self.width_field = gtk.Entry()
-        self.height_field = gtk.Entry()
-        self.width_field.set_width_chars(5)
-        self.height_field.set_width_chars(5)
-        lw = gtk.Label("Pixel size of each screen:  width")
-        lh = gtk.Label(" height")
-        hb.pack_start(lw, False)
-        hb.pack_start(self.width_field)
-        hb.pack_start(lh, False)
-        hb.pack_start(self.height_field)
+        label = gtk.Label("Pixel size of each screen: ")
+        hb.pack_start(label, False)
+        for name, default, label in (
+            ('width_field', self.default_width, "_width"),
+            ('height_field', self.default_height, "_height"),
+            ):
+            e = gtk.Entry()
+            e.set_width_chars(5)
+            e.set_alignment(1)
+            e.set_text(str(default))
+            setattr(self, name, e)
+            lb = gtk.Label(label)
+            lb.set_use_underline(True)
+            lb.set_mnemonic_widget(e)
+            hb.pack_start(lb, False)
+            hb.pack_start(e, False)
         _add_advanced(hb)
 
         self.create_button = gtk.Button("Create the new _video")
