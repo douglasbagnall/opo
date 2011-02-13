@@ -133,9 +133,31 @@ class Launcher:
 
     def create_video(self, widget, data=None):
         print >> sys.stderr, "creating video !"
-        input_files = [x.get_filename() for x in self.screen_choosers]
+        input_files = [x.get_uri() for x in self.screen_choosers]
+        width = int(self.width_field.get_text())
+        height = int(self.width_field.get_text())
+
         output_file = self.create_name_field.get_text()
-        join_video(output_file, input_file)
+        self.creation_process = start_creation_process(output_file, input_files, width, height)
+        #self.creation_process = subprocess.Popen(['sleep', '10'])
+        self.progress_bar = gtk.ProgressBar()
+        self.progress_bar.set_pulse_step(0.02)
+        self.vbox.pack_start(self.progress_bar)
+        self.create_button.hide()
+        self.progress_bar.show()
+        self.create_tick_id = gobject.timeout_add(150, self.create_tick)
+
+    def create_tick(self):
+        r = self.creation_process.poll()
+        if r is None:
+            self.progress_bar.pulse()
+            return True
+        if r != 0:
+            print >> sys.stderr, "got result %s" % r
+        self.progress_bar.hide()
+        self.create_button.show()
+        self.create_tick_id = None
+        return False
 
     def on_create_name(self, widget, data=None):
         dialog = gtk.FileChooserDialog("Save as", action=gtk.FILE_CHOOSER_ACTION_SAVE,
