@@ -13,6 +13,7 @@ SCREEN_HEIGHT = 768
 TIMEOUT = 20
 CHOOSE_DIR = '.'
 CREATE_DIR = '.'
+ENCODER = 'vp8'
 
 RC_FILE = 'opo.rc'
 AUTO_MODE = False
@@ -26,10 +27,56 @@ def name_suggester(dir, base, suffix):
             break
     return fullname
 
-def join_video(output_file, input_files):
-    for f in input_files:
-        if fn is None or not os.path.exists(fn):
-            raise IOError
+class OpoError(Exception):
+    pass
+
+def start_creation_process(output_file, input_files, width, height):
+    try:
+        for fn in input_files:
+            if not fn.startswith('file://'):
+                import urllib
+                fn = 'file://' + urllib.quote(os.path.abspath(fn))
+            #throw exception if unreadable (so no http uris)
+            open(fn[6:]).close()
+    except AttributeError:
+        raise OpoError("Not all input files are specified")
+    except IOError, e:
+        raise OpoError(e)
+
+    encoders = {
+        'vp8': ['vp8enc', 'quality=7'],
+        'mjpeg': ['jpegenc', 'idct-method=2'],
+        }
+
+    pipeline = (['gst-launch-0.10',
+                 'videomixer',
+                 'name=mix'
+                 'background=1',
+                 '!', 'ffmpegcolorspace',
+                 '!',
+                ]
+                + encoders[ENCODER]
+                + [
+                '!', 'avimux',
+                '!', 'filesink', 'location=%s' % output_file,
+                ])
+    for i, fn in enumerate(input_files):
+        left = i * width
+        right = (len(input_files) - 1 - i) * width
+        pipe_ext = [
+            'uridecodebin',
+            'uri=%s' % fn,
+            '!', 'deinterlace',
+            '!', 'videoscale',
+            '!', 'video/x-raw-yuv,', 'width=%s' % width, 'height=%s' % height,
+            '!', 'videobox', 'border-alpha=0', 'alpha=1', 'left=%s' % left, 'right=%s' % right,
+            '!', 'mix.',
+            ]
+        pipeline += pipe_ext
+
+    print >> sys.stderr, ' '.join(pipeline)
+    p = Popen(pipeline)
+    return p
 
 
 class Launcher:
