@@ -18,6 +18,10 @@ ENCODER = 'vp8'
 RC_FILE = 'opo.rc'
 AUTO_MODE = False
 
+def log(*messages):
+    for m in messages:
+        print >> sys.stderr, m
+
 def name_suggester(dir, base, suffix):
     from os.path import join, exists
     for i in range(1, 999):
@@ -74,7 +78,7 @@ def start_creation_process(output_file, input_files, width, height):
             ]
         pipeline += pipe_ext
 
-    print >> sys.stderr, ' '.join(pipeline)
+    log(' '.join(pipeline))
     p = Popen(pipeline)
     return p
 
@@ -84,15 +88,15 @@ class Launcher:
     tick_id = None
     tiemout = TIMEOUT
     def play(self, widget, data=None):
-        print >> sys.stderr, "play %s: %s" % (widget, data)
+        log("play %s: %s" % (widget, data))
         cmd = ['./opo', '-s', str(SCREENS), '-c', self.video]
-        print >> sys.stderr, cmd
+        log(cmd)
         subprocess.call(cmd)
 
     def on_toggle_auto(self, widget, data=None):
         auto = widget.get_active()
         if auto == self.is_auto:
-            print >> sys.stderr, "spurious auto toggle"
+            log("spurious auto toggle")
             return
         self.is_auto = auto
         for x in self.advanced_widgets:
@@ -132,7 +136,7 @@ class Launcher:
         self.choose_dir = widget.get_current_folder()
 
     def create_video(self, widget, data=None):
-        print >> sys.stderr, "creating video !"
+        log("creating video !")
         input_files = [x.get_uri() for x in self.screen_choosers]
         width = int(self.width_field.get_text())
         height = int(self.width_field.get_text())
@@ -153,7 +157,7 @@ class Launcher:
             self.progress_bar.pulse()
             return True
         if r != 0:
-            print >> sys.stderr, "got result %s" % r
+            log("got result %s" % r)
         self.progress_bar.hide()
         self.create_button.show()
         self.create_tick_id = None
@@ -174,7 +178,7 @@ class Launcher:
             directory, basename = os.path.split(filename)
             self.choose_dir = directory
             self.create_name_field.set_text(dialog.get_filename())
-        print >> sys.stderr, response
+        log(response)
         dialog.destroy()
 
 
@@ -185,7 +189,7 @@ class Launcher:
             try:
                 return rc.get(section, item)
             except CPError, e:
-                print >> sys.stderr, e
+                log(e)
                 return default
 
         self.create_dir = _get('Paths', 'create_dir', CREATE_DIR)
@@ -341,7 +345,7 @@ class Launcher:
 
 
     def destroy(self, widget, data=None):
-        print >> sys.stderr, "bye"
+        log("bye")
         self.write_rc()
         gtk.main_quit()
 
