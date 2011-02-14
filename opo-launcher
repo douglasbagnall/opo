@@ -37,13 +37,15 @@ def name_suggester(dir, base, suffix):
 
 def start_stitching_process(output_file, input_files, width, height):
     try:
-        for fn in input_files:
+        for i, fn in enumerate(input_files):
             if not fn.startswith('file://'):
                 import urllib
                 fn = 'file://' + urllib.quote(os.path.abspath(fn))
+                input_files[i] = fn
             #throw exception if unreadable (so no http uris)
             open(fn[6:]).close()
-    except AttributeError:
+    except AttributeError, e: #"None has no attribute startswith"
+        log(e)
         raise OpoError("Not all input files are specified")
     except IOError, e:
         raise OpoError(e)
@@ -55,7 +57,7 @@ def start_stitching_process(output_file, input_files, width, height):
 
     pipeline = (['gst-launch-0.10',
                  'videomixer',
-                 'name=mix'
+                 'name=mix',
                  'background=1',
                  '!', 'ffmpegcolorspace',
                  '!',
@@ -73,15 +75,15 @@ def start_stitching_process(output_file, input_files, width, height):
             'uri=%s' % fn,
             '!', 'deinterlace',
             '!', 'videoscale',
-            '!', 'video/x-raw-yuv,', 'width=%s' % width, 'height=%s' % height,
-            '!', 'videobox', 'border-alpha=0', 'alpha=1', 'left=%s' % left, 'right=%s' % right,
+            '!', 'video/x-raw-yuv,', 'width=%s,' % width, 'height=%s' % height,
+            ';', 'video/x-raw-rgb,', 'width=%s,' % width, 'height=%s' % height,
+            '!', 'videobox', 'border-alpha=0', 'alpha=1', 'left=-%s' % left, 'right=-%s' % right,
             '!', 'mix.',
             ])
 
     log(' '.join(pipeline))
-    p = Popen(pipeline)
+    p = subprocess.Popen(pipeline)
     return p
-
 
 class Launcher:
     is_auto = None
