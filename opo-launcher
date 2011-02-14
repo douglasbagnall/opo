@@ -142,7 +142,7 @@ class Launcher:
         #as self.play should never return
         return False
 
-    def choose_file(self, widget, *data):
+    def on_chooser(self, widget, *data):
         self.video = widget.get_uri()
         self.update_heading()
         self.update_choose_dir(widget.get_current_folder())
@@ -288,7 +288,7 @@ class Launcher:
         if self.choose_dir:
             self.chooser.set_current_folder(self.choose_dir)
         self.chooser.set_width_chars(40)
-        self.chooser.connect('file-set', self.choose_file, None)
+        self.chooser.connect('file-set', self.on_chooser, None)
 
         chooser_lab.set_mnemonic_widget(self.chooser)
 
