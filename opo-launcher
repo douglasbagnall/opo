@@ -7,16 +7,20 @@ import os, sys
 
 from ConfigParser import SafeConfigParser, Error as CPError
 
+OPO = './opo'
 SCREENS = 4
 SCREEN_WIDTH = 1024
 SCREEN_HEIGHT = 768
 TIMEOUT = 20
 CHOOSE_DIR = '.'
-CREATE_DIR = '.'
+UNSTITCHED_DIR = '.'
 ENCODER = 'vp8'
 
 RC_FILE = 'opo.rc'
 AUTO_MODE = False
+
+class OpoError(Exception):
+    pass
 
 def log(*messages):
     for m in messages:
@@ -31,10 +35,7 @@ def name_suggester(dir, base, suffix):
             break
     return fullname
 
-class OpoError(Exception):
-    pass
-
-def start_creation_process(output_file, input_files, width, height):
+def start_stitching_process(output_file, input_files, width, height):
     try:
         for fn in input_files:
             if not fn.startswith('file://'):
@@ -67,7 +68,7 @@ def start_creation_process(output_file, input_files, width, height):
     for i, fn in enumerate(input_files):
         left = i * width
         right = (len(input_files) - 1 - i) * width
-        pipe_ext = [
+        pipeline.extend([
             'uridecodebin',
             'uri=%s' % fn,
             '!', 'deinterlace',
@@ -75,8 +76,7 @@ def start_creation_process(output_file, input_files, width, height):
             '!', 'video/x-raw-yuv,', 'width=%s' % width, 'height=%s' % height,
             '!', 'videobox', 'border-alpha=0', 'alpha=1', 'left=%s' % left, 'right=%s' % right,
             '!', 'mix.',
-            ]
-        pipeline += pipe_ext
+            ])
 
     log(' '.join(pipeline))
     p = Popen(pipeline)
@@ -85,15 +85,24 @@ def start_creation_process(output_file, input_files, width, height):
 
 class Launcher:
     is_auto = None
-    tick_id = None
+    auto_tick_id = None
+    stitch_tick_id = None
     tiemout = TIMEOUT
-    def play(self, widget, data=None):
-        log("play %s: %s" % (widget, data))
-        cmd = ['./opo', '-s', str(SCREENS), '-c', self.video]
-        log(cmd)
+    chooser = None
+
+    def play(self):
+        """Play the currently selected video"""
+        cmd = [OPO, '-s', str(self.screens), '-c', self.video, '-w', '256', '-h', '192']
+        log("Starting play:", cmd)
         subprocess.call(cmd)
 
-    def on_toggle_auto(self, widget, data=None):
+    def on_play_now(self, widget, data=None):
+        self.play()
+
+    def on_mode_switch(self, widget, data=None):
+        """Turning auto mode on or off, according to the widget's
+        state ('active' is auto).  If the widget is toggled to the
+        current mode, ignore it."""
         auto = widget.get_active()
         if auto == self.is_auto:
             log("spurious auto toggle")
@@ -102,23 +111,22 @@ class Launcher:
         for x in self.advanced_widgets:
             x.set_sensitive(not auto)
         if auto:
-            self.start_countdown()
+            self.start_auto_countdown()
         else:
-            self.stop_countdown()
-            self.chooser.activate()
+            self.stop_auto_countdown()
 
-    def start_countdown(self):
+    def start_auto_countdown(self):
         self.countdown = self.timeout
-        if self.tick_id is None: #lest, somehow, two ticks try going at once.
-            self.tick_id = gobject.timeout_add(1000, self.tick)
+        if self.auto_tick_id is None: #lest, somehow, two ticks try going at once.
+            self.auto_tick_id = gobject.timeout_add(1000, self.auto_tick)
 
-    def stop_countdown(self):
-        if self.tick_id is not None:
-            gobject.source_remove(self.tick_id)
-            self.tick_id = None
+    def stop_auto_countdown(self):
+        if self.auto_tick_id is not None:
+            gobject.source_remove(self.auto_tick_id)
+            self.auto_tick_id = None
         self.mode_switch.set_label("Play _automatically in %s seconds" % self.timeout)
 
-    def tick(self):
+    def auto_tick(self):
         self.countdown -= 1
         if self.countdown > 0:
             if self.countdown == 1:
@@ -126,45 +134,52 @@ class Launcher:
             else:
                 self.mode_switch.set_label("Play _automatically in %s seconds" % self.countdown)
             return True
-        self.tick_id = None
-        self.play(None)
+        self.auto_tick_id = None
+        self.play()
+        #returning False stops countdown, which is perhaps irrelevant
+        #as self.play should never return
         return False
 
     def choose_file(self, widget, *data):
         self.video = widget.get_uri()
         self.update_heading()
-        self.choose_dir = widget.get_current_folder()
+        self.update_choose_dir(widget.get_current_folder())
 
-    def create_video(self, widget, data=None):
-        log("creating video !")
+    def stitch_video(self, widget, data=None):
+        """Launch the video joining gstreamer process, show a progress
+        bar/ spinner, and start a ticker that watches for its end."""
+        log("stitching video !")
+        output_file = self.stitch_target_field.get_text()
         input_files = [x.get_uri() for x in self.screen_choosers]
         width = int(self.width_field.get_text())
         height = int(self.width_field.get_text())
-
-        output_file = self.create_name_field.get_text()
-        self.creation_process = start_creation_process(output_file, input_files, width, height)
-        #self.creation_process = subprocess.Popen(['sleep', '10'])
+        self.stitching_process = start_stitching_process(output_file, input_files, width, height)
+        #self.stitching_process = subprocess.Popen(['sleep', '10'])
         self.progress_bar = gtk.ProgressBar()
         self.progress_bar.set_pulse_step(0.02)
         self.vbox.pack_start(self.progress_bar)
-        self.create_button.hide()
+        self.stitch_button.hide()
         self.progress_bar.show()
-        self.create_tick_id = gobject.timeout_add(150, self.create_tick)
+        self.stitch_tick_id = gobject.timeout_add(150, self.stitch_tick)
 
-    def create_tick(self):
-        r = self.creation_process.poll()
+    def stitch_tick(self):
+        """Spin the progress bar and wait for the finished video"""
+        r = self.stitching_process.poll()
         if r is None:
             self.progress_bar.pulse()
             return True
         if r != 0:
+            #XXX should catch and display gstreamer output
             log("got result %s" % r)
         self.progress_bar.hide()
-        self.create_button.show()
-        self.create_tick_id = None
+        self.stitch_button.show()
+        self.stitch_tick_id = None
+        #XXX make the new video the chosen one
         return False
 
-    def on_create_name(self, widget, data=None):
+    def on_choose_stitch_target(self, widget, data=None):
         dialog = gtk.FileChooserDialog("Save as", action=gtk.FILE_CHOOSER_ACTION_SAVE,
+                                       flags=gtk.DIALOG_MODAL,
                                        buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
                                         gtk.STOCK_OK, gtk.RESPONSE_ACCEPT)
                                        )
@@ -176,8 +191,8 @@ class Launcher:
         filename = dialog.get_filename()
         if response in (gtk.RESPONSE_ACCEPT, gtk.RESPONSE_OK):
             directory, basename = os.path.split(filename)
-            self.choose_dir = directory
-            self.create_name_field.set_text(dialog.get_filename())
+            self.update_choose_dir(directory)
+            self.stitch_target_field.set_text(dialog.get_filename())
         log(response)
         dialog.destroy()
 
@@ -192,8 +207,8 @@ class Launcher:
                 log(e)
                 return default
 
-        self.create_dir = _get('Paths', 'create_dir', CREATE_DIR)
-        self.choose_dir = _get('Paths', 'choose_dir', CHOOSE_DIR)
+        self.unstitched_dir = _get('Paths', 'unstitched_dir', UNSTITCHED_DIR)
+        self.update_choose_dir(_get('Paths', 'choose_dir', CHOOSE_DIR))
         self.video = _get('Paths', 'last_played')
         self.timeout = int(_get('Misc', 'timeout', TIMEOUT))
         self.screens = int(_get('Misc', 'screens', SCREENS))
@@ -204,7 +219,7 @@ class Launcher:
         rc = SafeConfigParser()
         rc.read(RC_FILE)
         for section, key, value in (
-            ('Paths', 'create_dir', self.create_dir),
+            ('Paths', 'unstitched_dir', self.unstitched_dir),
             ('Paths', 'choose_dir', self.choose_dir),
             ('Paths', 'last_played', self.video),
             ):
@@ -226,6 +241,11 @@ class Launcher:
             self.heading.set_markup('<big>No video selected</big>')
             self.play_now.set_sensitive(False)
 
+    def update_choose_dir(self, choosedir):
+        self.choose_dir = choosedir
+        if self.chooser:
+            self.chooser.set_current_folder(choosedir)
+
     def make_window(self):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_border_width(15)
@@ -238,6 +258,7 @@ class Launcher:
             self.advanced_widgets.append(widget)
 
         def _sep():
+            # add a separator with slightly more space than usual
             _add(gtk.HSeparator(), True, True, 5)
 
         # heading
@@ -247,13 +268,13 @@ class Launcher:
         self.heading = h
 
         self.play_now = gtk.Button("_Play now")
-        self.play_now.connect("clicked", self.play, None)
+        self.play_now.connect("clicked", self.on_play_now, None)
         _add(self.play_now)
         _sep()
 
         #auto toggle
         self.mode_switch = gtk.CheckButton("Play _automatically in %s seconds" % self.timeout)
-        self.mode_switch.connect("toggled", self.on_toggle_auto, None)
+        self.mode_switch.connect("toggled", self.on_mode_switch, None)
         _add(self.mode_switch)
         _sep()
 
@@ -273,7 +294,7 @@ class Launcher:
         _add_advanced(self.chooser)
         _sep()
 
-        #create another
+        #create another by stitching subvideos
         nb = gtk.Label("Construct a _new combined video out of %s video files" % self.screens)
         nb.set_use_underline(True)
 
@@ -293,18 +314,19 @@ class Launcher:
             _add_advanced(fc_set)
 
         #save_as box
-        self.create_name_field = gtk.Entry()
-        self.create_name_field.set_width_chars(40)
-        self.create_name_field.set_text(name_suggester(self.choose_dir, 'new', 'avi'))
+        #XXX file filters
+        self.stitch_target_field = gtk.Entry()
+        self.stitch_target_field.set_width_chars(40)
+        self.stitch_target_field.set_text(name_suggester(self.choose_dir, 'new', 'avi'))
 
-        self.create_name_chooser = gtk.Button(label="choose")
-        self.create_name_chooser.connect("clicked", self.on_create_name, None)
+        self.choose_stitch_target = gtk.Button(label="choose")
+        self.choose_stitch_target.connect("clicked", self.on_choose_stitch_target, None)
 
         hb = gtk.HBox()
         name_label = gtk.Label("Save as")
         hb.pack_start(name_label, False)
-        hb.pack_start(self.create_name_field)
-        hb.pack_start(self.create_name_chooser)
+        hb.pack_start(self.stitch_target_field)
+        hb.pack_start(self.choose_stitch_target)
         nb.set_mnemonic_widget(self.screen_choosers[0])
         _add_advanced(hb)
 
@@ -328,13 +350,12 @@ class Launcher:
             hb.pack_start(e, False)
         _add_advanced(hb)
 
-        self.create_button = gtk.Button("Create the new _video")
-        self.create_button.connect("clicked", self.create_video, None)
-        _add_advanced(self.create_button)
+        #stitch button
+        self.stitch_button = gtk.Button("Assemble the new _video")
+        self.stitch_button.connect("clicked", self.stitch_video, None)
+        _add_advanced(self.stitch_button)
 
         self.window.add(self.vbox)
-        self.window.connect("destroy", self.destroy)
-        self.window.show_all()
 
 
     def __init__(self):
@@ -342,6 +363,8 @@ class Launcher:
         self.make_window()
         self.update_heading()
         self.mode_switch.set_active(AUTO_MODE and self.video is not None)
+        self.window.connect("destroy", self.destroy)
+        self.window.show_all()
 
 
     def destroy(self, widget, data=None):
@@ -351,5 +374,6 @@ class Launcher:
 
     quit_onclick = destroy
 
-start = Launcher()
-gtk.main()
+if __name__ == '__main__':
+    start = Launcher()
+    gtk.main()
