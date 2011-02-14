@@ -32,8 +32,8 @@ def name_suggester(dir, base, suffix):
         name = "%s-%s.%s" % (base, i, suffix)
         fullname = join(dir, name)
         if not exists(fullname):
-            break
-    return fullname
+            return fullname
+    raise OpoError("please: think up a name, or we'll be here forever")
 
 def start_stitching_process(output_file, input_files, width, height):
     try:
