@@ -179,6 +179,14 @@ class Launcher:
         #XXX make the new video the chosen one
         return False
 
+    def on_screen_chooser(self, widget, n):
+        """Unify the screen_choosers current folder, unless they have video set"""
+        d = widget.get_current_folder()
+        for i in range(self.screens):
+            if self.screen_choosers[i].get_filename() is None:
+                self.screen_choosers[i].set_current_folder(d)
+        return True
+
     def on_choose_stitch_target(self, widget, data=None):
         dialog = gtk.FileChooserDialog("Save as", action=gtk.FILE_CHOOSER_ACTION_SAVE,
                                        flags=gtk.DIALOG_MODAL,
@@ -313,6 +321,7 @@ class Launcher:
             fc_set.pack_start(fcl, False)
             fc_set.pack_start(fc)
             self.screen_choosers.append(fc)
+            fc.connect('file-set', self.on_screen_chooser, i)
             _add_advanced(fc_set)
 
         #save_as box
