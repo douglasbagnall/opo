@@ -163,6 +163,7 @@ class Launcher:
         self.stitch_button.hide()
         self.progress_bar.show()
         self.stitch_tick_id = gobject.timeout_add(150, self.stitch_tick)
+        self.currently_stitching = output_file
 
     def stitch_tick(self):
         """Spin the progress bar and wait for the finished video"""
@@ -177,6 +178,12 @@ class Launcher:
         self.stitch_button.show()
         self.stitch_tick_id = None
         #XXX make the new video the chosen one
+
+        v = self.currently_stitching = output_file
+        if v[:7] == 'file://':
+            v = v[7:]
+        self.chooser.set_filename(v)
+        self.update_choose_dir(dirname(v))
         return False
 
     def on_screen_chooser(self, widget, n):
