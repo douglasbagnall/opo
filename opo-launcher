@@ -35,9 +35,7 @@ def name_suggester(dir, base, suffix):
             return fullname
     raise OpoError("please: think up a name, or we'll be here forever")
 
-def start_stitching_process(output_file, input_files, width, height, sound_mask=None):
-    if sound_mask is None:
-        sound_mask = [False] * len(input_files)
+def start_stitching_process(output_file, input_files, width, height, audio_source=None):
     try:
         for i, fn in enumerate(input_files):
             if not fn.startswith('file://'):
@@ -46,6 +44,7 @@ def start_stitching_process(output_file, input_files, width, height, sound_mask=
                 input_files[i] = fn
             #throw exception if unreadable (so no http uris)
             open(fn[6:]).close()
+
     except AttributeError, e: #"None has no attribute startswith"
         log(e)
         raise OpoError("Not all input files are specified")
@@ -82,6 +81,9 @@ def start_stitching_process(output_file, input_files, width, height, sound_mask=
             '!', 'videobox', 'border-alpha=0', 'alpha=1', 'left=-%s' % left, 'right=-%s' % right,
             '!', 'mix.',
             ])
+        if i == audio_source:
+            log("would be doing sound for %s" % i)
+
 
     log(' '.join(pipeline))
     p = subprocess.Popen(pipeline)
@@ -155,10 +157,10 @@ class Launcher:
         log("stitching video !")
         output_file = self.stitch_target_field.get_text()
         input_files = [x.get_uri() for x in self.stitch_choosers]
-        sound_mask = [x.get_active() for x in self.stitch_audio_mask]
         width = int(self.width_field.get_text())
         height = int(self.width_field.get_text())
-        self.stitching_process = start_stitching_process(output_file, input_files, width, height, sound_mask)
+        self.stitching_process = start_stitching_process(output_file, input_files,
+                                                         width, height, self.stitch_audio_source)
         #self.stitching_process = subprocess.Popen(['sleep', '10'])
         self.progress_bar = gtk.ProgressBar()
         self.progress_bar.set_pulse_step(0.02)
@@ -199,9 +201,8 @@ class Launcher:
 
     def on_choose_stitch_target(self, widget, data=None):
         dialog = gtk.FileChooserDialog("Save as", action=gtk.FILE_CHOOSER_ACTION_SAVE,
-                                       flags=gtk.DIALOG_MODAL,
                                        buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
-                                        gtk.STOCK_OK, gtk.RESPONSE_ACCEPT)
+                                                gtk.STOCK_OK, gtk.RESPONSE_ACCEPT)
                                        )
         dialog.set_do_overwrite_confirmation(True)
         if self.choose_dir:
@@ -216,6 +217,8 @@ class Launcher:
         log(response)
         dialog.destroy()
 
+    def on_stitch_audio_source(self, widget, n):
+        self.stitch_audio_source = n
 
     def read_rc(self):
         rc = SafeConfigParser()
@@ -321,18 +324,28 @@ class Launcher:
 
         nb.set_alignment(0, 0.5)
         _add_advanced(nb)
+
+        sound = gtk.Label("Sound:")
+        sound.set_alignment(0.99, 0.5)
+        _add_advanced(sound)
+
+        #hb = gtk.HBox()
+        self.stitch_silent = gtk.RadioButton(None, "silent")
+        self.stitch_silent.connect("toggled", self.on_stitch_audio_source, None)
+        #hb.pack_start(self.stitch_silent, False)
+
         #XXX file filters
         self.stitch_choosers = []
-        self.stitch_audio_mask = []
+        self.stitch_audio_source = None
         for i in range(self.screens):
             fc = gtk.FileChooserButton(title="video %s" % i)
             fcl = gtk.Label("Screen _%s" % (i + 1))
             fcl.set_use_underline(True)
             fcl.set_mnemonic_widget(fc)
-            fc_sound = gtk.CheckButton("audio")
+            fc_sound = gtk.RadioButton(self.stitch_silent, "audio %s" % (i + 1,))
             fc_sound.set_active(False)
             fc_sound.set_tooltip_text("use the sound from video %s" % (i + 1,))
-            self.stitch_audio_mask.append(fc_sound)
+            fc_sound.connect("toggled", self.on_stitch_audio_source, i)
             fc_set = gtk.HBox()
             fc_set.pack_start(fcl, False)
             fc_set.pack_start(fc)
@@ -340,6 +353,12 @@ class Launcher:
             self.stitch_choosers.append(fc)
             fc.connect('file-set', self.on_stitch_chooser, i)
             _add_advanced(fc_set)
+
+        hb = gtk.HBox()
+        #self.stitch_silent = gtk.RadioButton(None, "no sound")
+        hb.pack_end(self.stitch_silent, False)
+        _add_advanced(hb)
+
 
         #save_as box
         #XXX file filters
