@@ -63,29 +63,46 @@ def start_stitching_process(output_file, input_files, width, height, audio_sourc
                  '!', 'ffmpegcolorspace',
                  '!',
                 ]
-                + encoders[ENCODER]
-                + [
-                '!', 'avimux',
-                '!', 'filesink', 'location=%s' % output_file,
+                + encoders[ENCODER] +
+                ['!', 'avimux',
+                 'name=mux',
+                 '!', 'filesink', 'location=%s' % output_file,
                 ])
     for i, fn in enumerate(input_files):
         left = i * width
         right = (len(input_files) - 1 - i) * width
+        if i != audio_source:
+            pipeline.extend([
+                'uridecodebin',
+                'uri=%s' % fn,
+                ])
+        else:
+            log("doing sound for %s" % i)
+            pipeline.extend([
+                'uridecodebin',
+                'uri=%s' % fn,
+                'name=demux',
+                'demux.',
+                '!', 'queue',
+                #'!', 'vorbisenc',
+                #'!', 'lamemp3enc',
+                #'bitrate=192', 'cbr=true', 'target=bitrate',
+                '!', 'twolame',
+                'bitrate=320',
+                '!', 'mux.',
+                'demux.'
+                ])
         pipeline.extend([
-            'uridecodebin',
-            'uri=%s' % fn,
             '!', 'deinterlace',
             '!', 'videoscale',
             '!', 'video/x-raw-yuv,', 'width=%s,' % width, 'height=%s' % height,
             ';', 'video/x-raw-rgb,', 'width=%s,' % width, 'height=%s' % height,
             '!', 'videobox', 'border-alpha=0', 'alpha=1', 'left=-%s' % left, 'right=-%s' % right,
+            '!', 'queue',
             '!', 'mix.',
             ])
-        if i == audio_source:
-            log("would be doing sound for %s" % i)
 
-
-    log(' '.join(pipeline))
+    log(' '.join(pipeline).replace('!', ' \\\n!').replace('. ', '.\\\n '))
     p = subprocess.Popen(pipeline)
     return p
 
