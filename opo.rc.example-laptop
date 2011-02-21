@@ -1,0 +1,17 @@
+[Paths]
+choose_dir = ./stitched_video
+unstitched_dir = ./unstitched_video
+
+[Misc]
+timeout = 15
+
+[Import]
+screen_width = 256
+screen_height = 192
+
+[Display]
+screen_width = 256
+screen_height = 192
+x_screens = 0
+force_multiscreen = false
+screens = 4
