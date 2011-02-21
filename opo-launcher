@@ -264,7 +264,7 @@ class Launcher:
         self.display_width = int(_get('Display', 'screen_width', SCREEN_WIDTH))
         self.display_height = int(_get('Display', 'screen_height', SCREEN_HEIGHT))
         self.x_screens = int(_get('Display', 'x_screens', X_SCREENS))
-        self.force_multiscreen = _get('Display', 'force_multiscreen').lower() in ('true', '1', 'yes')
+        self.force_multiscreen = _get('Display', 'force_multiscreen', '').lower() in ('true', '1', 'yes')
 
     def write_rc(self):
         rc = SafeConfigParser()
