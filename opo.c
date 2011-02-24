@@ -344,6 +344,7 @@ pre_tee_pipeline(){
     pipeline = GST_PIPELINE(gst_element_factory_make("playbin2", NULL));
     g_object_set(G_OBJECT(pipeline),
         "uri", uri,
+        "volume", 0.5,
         NULL);
     g_signal_connect(pipeline, "about-to-finish",
         G_CALLBACK(about_to_finish_cb), uri);
