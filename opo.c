@@ -106,15 +106,17 @@ sync_bus_call(GstBus *bus, GstMessage *msg, gpointer data)
 
 
 static void
-set_up_loop(GstElement *pipeline){
+set_up_loop(GstElement *pipeline, int flags){
   g_print("loooooping\n");
-  if (!gst_element_seek(pipeline, 1.0, GST_FORMAT_TIME, GST_SEEK_FLAG_FLUSH,
+  if (!gst_element_seek(pipeline, 1.0, GST_FORMAT_TIME,
+          flags,
           GST_SEEK_TYPE_SET, 0,
-          //GST_SEEK_TYPE_END, -2 * NS_PER_FRAME,
-          GST_SEEK_TYPE_SET, (guint64)50 * NS_PER_FRAME
+          GST_SEEK_TYPE_END, -2 * NS_PER_FRAME
+          //GST_SEEK_TYPE_SET, (guint64)50 * NS_PER_FRAME
       )) {
     g_print ("Seek failed!\n");
   }
+
 }
 
 static int looping = 0;
@@ -128,7 +130,7 @@ manage_state_change(GstMessage *msg, GstElement *pipeline){
       g_print("pipeline state change\n");
       if (new_state == GST_STATE_PLAYING && ! looping){
         /* the pipeline is ready for the loop to be set*/
-        set_up_loop(pipeline);
+        set_up_loop(pipeline, GST_SEEK_FLAG_FLUSH);
         looping = 1;
       }
     }
@@ -140,6 +142,12 @@ manage_state_change(GstMessage *msg, GstElement *pipeline){
 
 
 static void
+manage_eos(GstMessage *msg, GstElement *pipeline){
+  g_print("doing eos\n");
+  set_up_loop(pipeline, GST_SEEK_FLAG_NONE);
+}
+
+static void
 about_to_finish_cb(GstElement *pipeline, char *uri)
 {
   g_print("would be starting again with %s\n", uri);
@@ -149,6 +157,7 @@ about_to_finish_cb(GstElement *pipeline, char *uri)
       "uri", uri,
       NULL);
   */
+  /*
   if (!gst_element_seek(pipeline, 1.0, GST_FORMAT_TIME, 0,
           GST_SEEK_TYPE_SET, 0,
           //GST_SEEK_TYPE_END, -2 * NS_PER_FRAME,
@@ -156,6 +165,7 @@ about_to_finish_cb(GstElement *pipeline, char *uri)
       )) {
     g_print ("Seek failed!\n");
   }
+  */
 }
 
 
@@ -173,18 +183,14 @@ async_bus_call(GstBus *bus, GstMessage *msg, GstElement *pipeline)
   case GST_MESSAGE_STATE_CHANGED:
     manage_state_change(msg, pipeline);
     break;
+  case GST_MESSAGE_EOS:
+    //manage_eos(msg, pipeline);
+    break;
   default:
     break;
   }
   return TRUE;
 }
-/*
-static GstBusSyncReply
-state_changed_cb(GstBus *bus, GstMessage *message,
-		 GstPipeline *pipeline){
-  g_print("eggs STATE CHANGED!\n");
-}
-*/
 
 
 static void
