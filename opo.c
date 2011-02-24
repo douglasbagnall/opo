@@ -252,44 +252,47 @@ attempt_filename_to_uri(char *filename){
   return uri;
 }
 
+
 static GstPipeline *
-pre_tee_pipeline(){
+uri_pre_tee_pipeline(){
   GstPipeline *pipeline;
-  if (option_content) {
-    char *uri;
-    if( g_str_has_prefix(option_content, "file://") ||
-        g_str_has_prefix(option_content, "http://") /* || others */
-    ){
-      uri = option_content;
-    }
-    else{
-      uri = attempt_filename_to_uri(option_content);
-    }
-    g_print("uri is '%s'\n", uri);
-    pipeline = GST_PIPELINE(gst_element_factory_make("playbin2", NULL));
-    g_object_set(G_OBJECT(pipeline),
-        "uri", uri,
-        "volume", 0.5,
+  char *uri;
+  if( g_str_has_prefix(option_content, "file://") ||
+      g_str_has_prefix(option_content, "http://") /* || others */
+  ){
+    uri = option_content;
+  }
+  else{
+    uri = attempt_filename_to_uri(option_content);
+  }
+  g_print("uri is '%s'\n", uri);
+  pipeline = GST_PIPELINE(gst_element_factory_make("playbin2", NULL));
+  g_object_set(G_OBJECT(pipeline),
+      "uri", uri,
+      "volume", 0.5,
+      NULL);
+  g_signal_connect(pipeline, "about-to-finish",
+      G_CALLBACK(about_to_finish_cb), uri);
+  return pipeline;
+}
+
+static GstPipeline *
+test_pre_tee_pipeline(){
+  GstPipeline *pipeline;
+  pipeline = GST_PIPELINE(gst_pipeline_new("test_pipeline"));
+  char * src_name = (option_fake) ? "videotestsrc" : "v4l2src";
+  GstElement *src = gst_element_factory_make(src_name, "videosource");
+  if (option_fake == 2){//set some properties for an interesting picture
+    g_object_set(G_OBJECT(src),
+        "pattern",  14, //"zone-plate"
+        "kt2", 0,
+        "kx2", 3,
+        "ky2", 3,
+        "kt", 3,
+        "kxy", 2,
         NULL);
-    g_signal_connect(pipeline, "about-to-finish",
-        G_CALLBACK(about_to_finish_cb), uri);
   }
-  else {
-    pipeline = GST_PIPELINE(gst_pipeline_new("test_pipeline"));
-    char * src_name = (option_fake) ? "videotestsrc" : "v4l2src";
-    GstElement *src = gst_element_factory_make(src_name, "videosource");
-    if (option_fake == 2){//set some properties for an interesting picture
-      g_object_set(G_OBJECT(src),
-          "pattern",  14, //"zone-plate"
-          "kt2", 0,
-          "kx2", 3,
-          "ky2", 3,
-          "kt", 3,
-          "kxy", 2,
-          NULL);
-    }
-    gst_bin_add(GST_BIN(pipeline), src);
-  }
+  gst_bin_add(GST_BIN(pipeline), src);
   return pipeline;
 }
 
@@ -326,9 +329,14 @@ tee_bin(GMainLoop *loop, window_t *windows){
 static GstPipeline *
 gstreamer_start(GMainLoop *loop, window_t windows[MAX_SCREENS])
 {
-  GstPipeline *pipeline = pre_tee_pipeline();
+  GstPipeline *pipeline;
+  if (option_content){
+    pipeline = uri_pre_tee_pipeline();
+  }
+  else{
+    pipeline = test_pre_tee_pipeline();
+  }
   GstBin *teebin = tee_bin(loop, windows);
-
 
   if (option_content) {
     g_object_set(G_OBJECT(pipeline),
