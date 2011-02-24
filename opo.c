@@ -57,7 +57,6 @@ post_tee_pipeline(GstBin *bin, GstElement *tee, GstElement *sink,
 }
 
 
-
 static void hide_mouse(GtkWidget *widget){
   GdkWindow *w = GDK_WINDOW(widget->window);
   GdkDisplay *display = gdk_display_get_default();
@@ -65,7 +64,6 @@ static void hide_mouse(GtkWidget *widget){
   gdk_window_set_cursor(w, cursor);
   gdk_cursor_unref (cursor);
 }
-
 
 
 static GstBusSyncReply
@@ -105,93 +103,15 @@ sync_bus_call(GstBus *bus, GstMessage *msg, gpointer data)
 }
 
 
-static void
-set_up_loop(GstElement *pipeline, int flags){
-  g_print("loooooping\n");
-  if (!gst_element_seek(pipeline, 1.0, GST_FORMAT_TIME,
-          flags,
-          GST_SEEK_TYPE_SET, 0,
-          GST_SEEK_TYPE_END, -2 * NS_PER_FRAME
-          //GST_SEEK_TYPE_SET, (guint64)50 * NS_PER_FRAME
-      )) {
-    g_print ("Seek failed!\n");
-  }
-
-}
-
-static int looping = 0;
-
-
-static void
-manage_state_change(GstMessage *msg, GstElement *pipeline){
-    GstState old_state, new_state;
-    gst_message_parse_state_changed(msg, &old_state, &new_state, NULL);
-    if (msg->src == GST_OBJECT(pipeline)){
-      g_print("pipeline state change\n");
-      if (new_state == GST_STATE_PLAYING && ! looping){
-        /* the pipeline is ready for the loop to be set*/
-        set_up_loop(pipeline, GST_SEEK_FLAG_FLUSH);
-        looping = 1;
-      }
-    }
-    g_print ("Element %s changed state from %s to %s.\n",
-        GST_OBJECT_NAME (msg->src),
-        gst_element_state_get_name(old_state),
-        gst_element_state_get_name(new_state));
-}
-
-
-static void
-manage_eos(GstMessage *msg, GstElement *pipeline){
-  g_print("doing eos\n");
-  set_up_loop(pipeline, GST_SEEK_FLAG_NONE);
-}
 
 static void
 about_to_finish_cb(GstElement *pipeline, char *uri)
 {
   g_print("would be starting again with %s\n", uri);
-
-  /*
   g_object_set(G_OBJECT(pipeline),
       "uri", uri,
       NULL);
-  */
-  /*
-  if (!gst_element_seek(pipeline, 1.0, GST_FORMAT_TIME, 0,
-          GST_SEEK_TYPE_SET, 0,
-          //GST_SEEK_TYPE_END, -2 * NS_PER_FRAME,
-          GST_SEEK_TYPE_SET, (guint64)50 * NS_PER_FRAME
-      )) {
-    g_print ("Seek failed!\n");
-  }
-  */
 }
-
-
-static gboolean
-async_bus_call(GstBus *bus, GstMessage *msg, GstElement *pipeline)
-{
-  g_print("async call with %s\n", GST_MESSAGE_TYPE_NAME(msg));
-  switch(GST_MESSAGE_TYPE(msg)){
-  case GST_MESSAGE_SEGMENT_DONE:
-    g_print("segment done!\n");
-    break;
-  case GST_MESSAGE_STREAM_STATUS:
-    g_print("stream status changed!\n");
-    break;
-  case GST_MESSAGE_STATE_CHANGED:
-    manage_state_change(msg, pipeline);
-    break;
-  case GST_MESSAGE_EOS:
-    //manage_eos(msg, pipeline);
-    break;
-  default:
-    break;
-  }
-  return TRUE;
-}
-
 
 static void
 toggle_fullscreen(GtkWidget *widget){
@@ -238,7 +158,6 @@ video_widget_realize_cb(GtkWidget *widget, gpointer data)
   g_print("realised window %d with XID %lu\n", w->id, w->xid);
   hide_mouse(widget);
 }
-
 
 static void
 set_up_window(GMainLoop *loop, window_t *w, int screen_no){
@@ -333,8 +252,6 @@ attempt_filename_to_uri(char *filename){
   return uri;
 }
 
-
-
 static GstPipeline *
 pre_tee_pipeline(){
   GstPipeline *pipeline;
@@ -356,8 +273,6 @@ pre_tee_pipeline(){
         NULL);
     g_signal_connect(pipeline, "about-to-finish",
         G_CALLBACK(about_to_finish_cb), uri);
-    //g_free(uri);
-    //set_up_lopo(GST_ELEMENT(pipeline));
   }
   else {
     pipeline = GST_PIPELINE(gst_pipeline_new("test_pipeline"));
@@ -408,8 +323,6 @@ tee_bin(GMainLoop *loop, window_t *windows){
 
 
 
-
-
 static GstPipeline *
 gstreamer_start(GMainLoop *loop, window_t windows[MAX_SCREENS])
 {
@@ -432,7 +345,7 @@ gstreamer_start(GMainLoop *loop, window_t windows[MAX_SCREENS])
 
   GstBus *bus = gst_pipeline_get_bus(pipeline);
   gst_bus_set_sync_handler(bus, (GstBusSyncHandler)sync_bus_call, windows);
-  gst_bus_add_watch(bus, (GstBusFunc)async_bus_call, pipeline);
+  //gst_bus_add_watch(bus, (GstBusFunc)async_bus_call, pipeline);
 
   gst_object_unref(bus);
 
