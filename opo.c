@@ -103,6 +103,84 @@ sync_bus_call(GstBus *bus, GstMessage *msg, gpointer data)
 }
 
 
+static void
+set_up_loop(GstElement *source, int flags){
+  g_print("loooooping\n");
+  gint64 end;
+  GstFormat nanosec_format = GST_FORMAT_TIME;
+  gst_element_query_duration(source,
+      &nanosec_format,
+      &end
+  );
+  g_print("looking at %f seconds\n", end / 1000.0 / 1000.0 / 1000.0);
+  if (!gst_element_seek(source, 1.0, GST_FORMAT_TIME,
+          flags,
+          GST_SEEK_TYPE_SET, 0,
+          //GST_SEEK_TYPE_END, -3 * NS_PER_FRAME
+          GST_SEEK_TYPE_SET, end - 2 * NS_PER_FRAME
+      )) {
+    g_print ("Seek failed!\n");
+  }
+
+}
+
+static gboolean looping = FALSE;
+static int loop_flags = GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_SEGMENT;
+
+static void
+manage_state_change(GstMessage *msg, GstElement *pipeline){
+    GstState old_state, new_state;
+    gst_message_parse_state_changed(msg, &old_state, &new_state, NULL);
+    if (msg->src == GST_OBJECT(pipeline)){
+      g_print("pipeline state change\n");
+      if (new_state == GST_STATE_PLAYING && ! looping){
+        /* the pipeline is ready for the loop to be set*/
+        set_up_loop(pipeline, loop_flags);
+        looping = TRUE;
+        loop_flags = GST_SEEK_FLAG_SEGMENT;
+        GstElement *source;
+        g_object_get(G_OBJECT(pipeline), "source", &source,
+            NULL);
+        char *name =  gst_element_get_name(source);
+        g_print("playbin source is %s\n", name);
+        guint i, n;
+        GObjectClass *oclass = G_OBJECT_GET_CLASS(G_OBJECT(source));
+        GParamSpec **spec = g_object_class_list_properties(oclass, &n);
+        for (i=0; i< n; i++){
+          g_print("property: %s\n", spec[i]->name);
+        }
+      }
+    }
+    g_print ("Element %s changed state from %s to %s.\n",
+        GST_OBJECT_NAME (msg->src),
+        gst_element_state_get_name(old_state),
+        gst_element_state_get_name(new_state));
+}
+
+static gboolean
+async_bus_call(GstBus *bus, GstMessage *msg, GstElement *pipeline)
+{
+  g_print("async call with %s\n", GST_MESSAGE_TYPE_NAME(msg));
+  switch(GST_MESSAGE_TYPE(msg)){
+  case GST_MESSAGE_SEGMENT_DONE:
+    set_up_loop(pipeline, GST_SEEK_FLAG_SEGMENT);
+    g_print("segment done!\n");
+    break;
+  case GST_MESSAGE_STREAM_STATUS:
+    g_print("stream status changed!\n");
+    break;
+  case GST_MESSAGE_STATE_CHANGED:
+    manage_state_change(msg, pipeline);
+    break;
+  case GST_MESSAGE_EOS:
+    g_print("END of STREEEEAM!\n");
+    break;
+  default:
+    break;
+  }
+  return TRUE;
+}
+
 
 static void
 about_to_finish_cb(GstElement *pipeline, char *uri)
@@ -353,7 +431,7 @@ gstreamer_start(GMainLoop *loop, window_t windows[MAX_SCREENS])
 
   GstBus *bus = gst_pipeline_get_bus(pipeline);
   gst_bus_set_sync_handler(bus, (GstBusSyncHandler)sync_bus_call, windows);
-  //gst_bus_add_watch(bus, (GstBusFunc)async_bus_call, pipeline);
+  gst_bus_add_watch(bus, (GstBusFunc)async_bus_call, pipeline);
 
   gst_object_unref(bus);
 
