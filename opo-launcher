@@ -16,7 +16,11 @@ X_SCREENS = 2
 TIMEOUT = 20
 CHOOSE_DIR = '.'
 UNSTITCHED_DIR = '.'
-ENCODER = 'vp8'
+ENCODER = 'mpeg4'
+#an approximate target for working out bps settings (for mpeg4/2-ish codecs)
+#256 * 192 * 4 screens --> 192k * BYTES_PER_PIXEL_PER_SECOND bps
+#1024 * 768 * 4 screens --> 3M * BYTES_PER_PIXEL_PER_SECOND bps
+BYTES_PER_PIXEL_PER_SECOND = 1.5
 
 RC_FILE = 'opo.rc'
 AUTO_MODE = False
@@ -56,7 +60,18 @@ def start_stitching_process(output_file, input_files, width, height, audio_sourc
     encoders = {
         'vp8': ['vp8enc', 'quality=7'],
         'mjpeg': ['jpegenc', 'idct-method=2'],
+        'mpeg1': ['mpeg2enc',], #XXX need to set bitrate, etc
+        'theora': ['theoraenc',], #XXX settings
+        'x264': ['x264enc', 'tune=fastdecode', ],
+        'flv': ['ffenc_flv', "bitrate=%(bitrate)s"],  #XXX settings
+        'mpeg4': ['ffenc_mpeg4', "pass=2", 'quantizer=5'],  #XXX settings
+        'msmpeg4': ['ffenc_msmpeg4', "pass=2", 'quantizer=5'],# "bitrate=%(bitrate)s"
+
         }
+    details = {
+        'bitrate': int(BYTES_PER_PIXEL_PER_SECOND * width * height * len(input_files)),
+    }
+    encoder_pipe = [s % details for s in encoders[ENCODER]]
 
     pipeline = (['gst-launch-0.10',
                  'videomixer',
@@ -65,7 +80,7 @@ def start_stitching_process(output_file, input_files, width, height, audio_sourc
                  '!', 'ffmpegcolorspace',
                  '!',
                 ]
-                + encoders[ENCODER] +
+                + encoder_pipe +
                 ['!', 'avimux',
                  'name=mux',
                  '!', 'filesink', 'location=%s' % output_file,

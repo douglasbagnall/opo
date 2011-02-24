@@ -5,6 +5,8 @@
 #define DEFAULT_WIDTH (640 / 4)
 #define DEFAULT_HEIGHT 480
 
+#define NS_PER_FRAME ((guint64)(1000 * 1000 * 1000 / 25))
+
 static gint option_fake = 0;
 static gboolean option_force_multiscreen = FALSE;
 static gboolean option_fullscreen = FALSE;
