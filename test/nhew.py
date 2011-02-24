@@ -17,6 +17,6 @@ TEST_VIDEOS = [
     ]
 
 #p = opo_launcher.start_stitching_process('/tmp/test.avi', TEST_VIDEOS[:4], 352, 288)
-p = opo_launcher.start_stitching_process('/stitched_video/nhew-mp4.avi', TEST_VIDEOS, 1024, 768, 2)
+p = opo_launcher.start_stitching_process('./stitched_video/nhew-mp4.avi', TEST_VIDEOS, 1024, 768, 2)
 
 print p.communicate()
