@@ -327,6 +327,8 @@ attempt_filename_to_uri(char *filename){
   return uri;
 }
 
+
+
 static GstPipeline *
 pre_tee_pipeline(){
   GstPipeline *pipeline;
@@ -400,6 +402,8 @@ tee_bin(GMainLoop *loop, window_t *windows){
 
 
 
+
+
 static GstPipeline *
 gstreamer_start(GMainLoop *loop, window_t windows[MAX_SCREENS])
 {
@@ -417,15 +421,12 @@ gstreamer_start(GMainLoop *loop, window_t windows[MAX_SCREENS])
     GstElement *videosrc = gst_bin_get_by_name(GST_BIN(pipeline), "videosource");
     GstCaps *caps = make_good_caps();
     gst_element_link_filtered(videosrc, GST_ELEMENT(teebin), caps);
-    //XXX unref caps?
+    gst_object_unref(caps);
   }
-
-  //xxx
 
   GstBus *bus = gst_pipeline_get_bus(pipeline);
   gst_bus_set_sync_handler(bus, (GstBusSyncHandler)sync_bus_call, windows);
   gst_bus_add_watch(bus, (GstBusFunc)async_bus_call, pipeline);
-  //g_signal_connect(bus, "message::state-changed", G_CALLBACK(async_bus_call), pipeline);
 
   gst_object_unref(bus);
 
