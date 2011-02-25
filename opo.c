@@ -57,7 +57,6 @@ post_tee_pipeline(GstBin *bin, GstElement *tee, GstElement *sink,
 }
 
 
-
 static void hide_mouse(GtkWidget *widget){
   GdkWindow *w = GDK_WINDOW(widget->window);
   GdkDisplay *display = gdk_display_get_default();
@@ -67,13 +66,11 @@ static void hide_mouse(GtkWidget *widget){
 }
 
 
-
 static GstBusSyncReply
 sync_bus_call(GstBus *bus, GstMessage *msg, gpointer data)
 {
+  //g_print("SYNC call with %s\n", GST_MESSAGE_TYPE_NAME(msg));
   // ignore anything but 'prepare-xwindow-id' element messages
-  g_print("SYNC call with %s\n", GST_MESSAGE_TYPE_NAME(msg));
-
   if ((GST_MESSAGE_TYPE(msg) != GST_MESSAGE_ELEMENT) ||
       (! gst_structure_has_name(msg->structure, "prepare-xwindow-id"))){
    return GST_BUS_PASS;
@@ -106,69 +103,54 @@ sync_bus_call(GstBus *bus, GstMessage *msg, gpointer data)
 
 
 static void
-set_up_loop(GstElement *pipeline){
+set_up_loop(GstElement *source, int flags){
   g_print("loooooping\n");
-  if (!gst_element_seek(pipeline, 1.0, GST_FORMAT_TIME, GST_SEEK_FLAG_FLUSH,
+  gint64 end;
+  GstFormat nanosec_format = GST_FORMAT_TIME;
+  gst_element_query_duration(source,
+      &nanosec_format,
+      &end
+  );
+  //g_print("stream ends at %f seconds\n", end / 1000.0 / 1000.0 / 1000.0);
+  if (!gst_element_seek(source, 1.0, GST_FORMAT_TIME,
+          flags,
           GST_SEEK_TYPE_SET, 0,
-          //GST_SEEK_TYPE_END, -2 * NS_PER_FRAME,
-          GST_SEEK_TYPE_SET, (guint64)50 * NS_PER_FRAME
+          GST_SEEK_TYPE_SET, end - 2 * NS_PER_FRAME
       )) {
     g_print ("Seek failed!\n");
   }
 }
 
-static int looping = 0;
-
+static gboolean looping = FALSE;
 
 static void
 manage_state_change(GstMessage *msg, GstElement *pipeline){
-    GstState old_state, new_state;
-    gst_message_parse_state_changed(msg, &old_state, &new_state, NULL);
+  GstState old_state, new_state, pending_state;
+    gst_message_parse_state_changed(msg, &old_state, &new_state, &pending_state);
     if (msg->src == GST_OBJECT(pipeline)){
-      g_print("pipeline state change\n");
-      if (new_state == GST_STATE_PLAYING && ! looping){
-        /* the pipeline is ready for the loop to be set*/
-        set_up_loop(pipeline);
-        looping = 1;
+      //g_print("pipeline state change\n");
+      if (new_state == GST_STATE_PAUSED && ! looping){
+        /* the pipeline is ready for the initial loop to be set*/
+        set_up_loop(pipeline, GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_SEGMENT);
+        looping = TRUE;
       }
     }
-    g_print ("Element %s changed state from %s to %s.\n",
+    /*
+    g_print ("Element %s changed state from %s to %s, pending %s.\n",
         GST_OBJECT_NAME (msg->src),
         gst_element_state_get_name(old_state),
-        gst_element_state_get_name(new_state));
+        gst_element_state_get_name(new_state),
+        gst_element_state_get_name(pending_state));
+    */
 }
-
-
-static void
-about_to_finish_cb(GstElement *pipeline, char *uri)
-{
-  g_print("would be starting again with %s\n", uri);
-
-  /*
-  g_object_set(G_OBJECT(pipeline),
-      "uri", uri,
-      NULL);
-  */
-  if (!gst_element_seek(pipeline, 1.0, GST_FORMAT_TIME, 0,
-          GST_SEEK_TYPE_SET, 0,
-          //GST_SEEK_TYPE_END, -2 * NS_PER_FRAME,
-          GST_SEEK_TYPE_SET, (guint64)50 * NS_PER_FRAME
-      )) {
-    g_print ("Seek failed!\n");
-  }
-}
-
 
 static gboolean
 async_bus_call(GstBus *bus, GstMessage *msg, GstElement *pipeline)
 {
-  g_print("async call with %s\n", GST_MESSAGE_TYPE_NAME(msg));
+  //g_print("async call with %s\n", GST_MESSAGE_TYPE_NAME(msg));
   switch(GST_MESSAGE_TYPE(msg)){
   case GST_MESSAGE_SEGMENT_DONE:
-    g_print("segment done!\n");
-    break;
-  case GST_MESSAGE_STREAM_STATUS:
-    g_print("stream status changed!\n");
+    set_up_loop(pipeline, GST_SEEK_FLAG_SEGMENT);
     break;
   case GST_MESSAGE_STATE_CHANGED:
     manage_state_change(msg, pipeline);
@@ -178,14 +160,16 @@ async_bus_call(GstBus *bus, GstMessage *msg, GstElement *pipeline)
   }
   return TRUE;
 }
-/*
-static GstBusSyncReply
-state_changed_cb(GstBus *bus, GstMessage *message,
-		 GstPipeline *pipeline){
-  g_print("eggs STATE CHANGED!\n");
-}
-*/
 
+
+static void
+about_to_finish_cb(GstElement *pipeline, char *uri)
+{
+  g_print("would be starting again with %s\n", uri);
+  g_object_set(G_OBJECT(pipeline),
+      "uri", uri,
+      NULL);
+}
 
 static void
 toggle_fullscreen(GtkWidget *widget){
@@ -232,7 +216,6 @@ video_widget_realize_cb(GtkWidget *widget, gpointer data)
   g_print("realised window %d with XID %lu\n", w->id, w->xid);
   hide_mouse(widget);
 }
-
 
 static void
 set_up_window(GMainLoop *loop, window_t *w, int screen_no){
@@ -328,47 +311,46 @@ attempt_filename_to_uri(char *filename){
 }
 
 
+static GstPipeline *
+uri_pre_tee_pipeline(){
+  GstPipeline *pipeline;
+  char *uri;
+  if( g_str_has_prefix(option_content, "file://") ||
+      g_str_has_prefix(option_content, "http://") /* || others */
+  ){
+    uri = option_content;
+  }
+  else{
+    uri = attempt_filename_to_uri(option_content);
+  }
+  g_print("uri is '%s'\n", uri);
+  pipeline = GST_PIPELINE(gst_element_factory_make("playbin2", NULL));
+  g_object_set(G_OBJECT(pipeline),
+      "uri", uri,
+      "volume", 0.5,
+      NULL);
+  g_signal_connect(pipeline, "about-to-finish",
+      G_CALLBACK(about_to_finish_cb), uri);
+  return pipeline;
+}
 
 static GstPipeline *
-pre_tee_pipeline(){
+test_pre_tee_pipeline(){
   GstPipeline *pipeline;
-  if (option_content) {
-    char *uri;
-    if( g_str_has_prefix(option_content, "file://") ||
-        g_str_has_prefix(option_content, "http://") /* || others */
-    ){
-      uri = option_content;
-    }
-    else{
-      uri = attempt_filename_to_uri(option_content);
-    }
-    g_print("uri is '%s'\n", uri);
-    pipeline = GST_PIPELINE(gst_element_factory_make("playbin2", NULL));
-    g_object_set(G_OBJECT(pipeline),
-        "uri", uri,
-        "volume", 0.5,
+  pipeline = GST_PIPELINE(gst_pipeline_new("test_pipeline"));
+  char * src_name = (option_fake) ? "videotestsrc" : "v4l2src";
+  GstElement *src = gst_element_factory_make(src_name, "videosource");
+  if (option_fake == 2){//set some properties for an interesting picture
+    g_object_set(G_OBJECT(src),
+        "pattern",  14, //"zone-plate"
+        "kt2", 0,
+        "kx2", 3,
+        "ky2", 3,
+        "kt", 3,
+        "kxy", 2,
         NULL);
-    g_signal_connect(pipeline, "about-to-finish",
-        G_CALLBACK(about_to_finish_cb), uri);
-    //g_free(uri);
-    //set_up_lopo(GST_ELEMENT(pipeline));
   }
-  else {
-    pipeline = GST_PIPELINE(gst_pipeline_new("test_pipeline"));
-    char * src_name = (option_fake) ? "videotestsrc" : "v4l2src";
-    GstElement *src = gst_element_factory_make(src_name, "videosource");
-    if (option_fake == 2){//set some properties for an interesting picture
-      g_object_set(G_OBJECT(src),
-          "pattern",  14, //"zone-plate"
-          "kt2", 0,
-          "kx2", 3,
-          "ky2", 3,
-          "kt", 3,
-          "kxy", 2,
-          NULL);
-    }
-    gst_bin_add(GST_BIN(pipeline), src);
-  }
+  gst_bin_add(GST_BIN(pipeline), src);
   return pipeline;
 }
 
@@ -402,14 +384,17 @@ tee_bin(GMainLoop *loop, window_t *windows){
 
 
 
-
-
 static GstPipeline *
 gstreamer_start(GMainLoop *loop, window_t windows[MAX_SCREENS])
 {
-  GstPipeline *pipeline = pre_tee_pipeline();
+  GstPipeline *pipeline;
+  if (option_content){
+    pipeline = uri_pre_tee_pipeline();
+  }
+  else{
+    pipeline = test_pre_tee_pipeline();
+  }
   GstBin *teebin = tee_bin(loop, windows);
-
 
   if (option_content) {
     g_object_set(G_OBJECT(pipeline),

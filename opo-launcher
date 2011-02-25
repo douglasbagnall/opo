@@ -42,14 +42,21 @@ def name_suggester(dir, base, suffix):
     raise OpoError("please: think up a name, or we'll be here forever")
 
 def start_stitching_process(output_file, input_files, width, height, audio_source=None):
+    import urllib
+    from urlparse import urlsplit
     try:
-        for i, fn in enumerate(input_files):
-            if not fn.startswith('file://'):
-                import urllib
-                fn = 'file://' + urllib.quote(os.path.abspath(fn))
-                input_files[i] = fn
-            #throw exception if unreadable (so no http uris)
-            open(fn[6:]).close()
+        for i, uri in enumerate(input_files):
+            if not uri.startswith('file://'):
+                fn = uri
+                uri = 'file://' + urllib.quote(os.path.abspath(uri))
+            else:
+                fn = '/' + urllib.unquote(urlsplit(uri).path)#.decode('utf-8')
+            #trigger exception if the filenamevdoesn't exist (so no http uris)
+            open(fn).close()
+            input_files[i] = uri
+
+
+
 
     except AttributeError, e: #"None has no attribute startswith"
         log(e)
@@ -206,10 +213,10 @@ class Launcher:
         self.vbox.pack_start(self.progress_bar)
         self.stitch_button.hide()
         self.progress_bar.show()
-        self.stitch_tick_id = gobject.timeout_add(150, self.stitch_tick)
+        self.stitch_tick_id = gobject.timeout_add(150, self.stitch_tick, ouptput_file)
         self.currently_stitching = output_file
 
-    def stitch_tick(self):
+    def stitch_tick(self, output_file):
         """Spin the progress bar and wait for the finished video"""
         r = self.stitching_process.poll()
         if r is None:
