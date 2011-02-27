@@ -1,9 +1,9 @@
 
 [Desktop Entry]
 Name=Opo Launcher
-Comment=Put this in ~/.config/autostart to launch Opo automatically
-Exec="~/opo/opo-launcher"
-Path="~/opo/"
+Comment="Put this in ~/.config/autostart to launch Opo automatically"
+Exec="/home/fresh/opo/opo-launcher"
+Path="/home/fresh/opo/"
 Terminal=false
 Type=Application
 Categories=
