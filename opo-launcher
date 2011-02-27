@@ -23,7 +23,7 @@ ENCODER = 'mpeg4'
 BYTES_PER_PIXEL_PER_SECOND = 1.5
 
 RC_FILE = 'opo.rc'
-AUTO_MODE = False
+auto_start = False
 
 class OpoError(Exception):
     pass
@@ -280,7 +280,7 @@ class Launcher:
         self.update_choose_dir(_get('Paths', 'choose_dir', CHOOSE_DIR))
         self.video = _get('Paths', 'last_played')
         self.timeout = int(_get('Misc', 'timeout', TIMEOUT))
-        self.auto_mode = _get('Misc', 'auto_mode', '').lower() in ('true', '1', 'yes') or AUTO_MODE
+        self.auto_start = _get('Misc', 'auto_start', '').lower() in ('true', '1', 'yes') or auto_start
         self.screens = int(_get('Display', 'screens', SCREENS))
         self.import_width = int(_get('Import', 'screen_width', SCREEN_WIDTH))
         self.import_height = int(_get('Import', 'screen_height', SCREEN_HEIGHT))
@@ -460,7 +460,7 @@ class Launcher:
         self.read_rc()
         self.make_window()
         self.update_heading()
-        self.mode_switch.set_active(self.auto_mode and self.video is not None)
+        self.mode_switch.set_active(self.auto_start and self.video is not None)
         self.window.connect("destroy", self.destroy)
         self.window.show_all()
 
