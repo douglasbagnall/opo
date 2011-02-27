@@ -280,6 +280,7 @@ class Launcher:
         self.update_choose_dir(_get('Paths', 'choose_dir', CHOOSE_DIR))
         self.video = _get('Paths', 'last_played')
         self.timeout = int(_get('Misc', 'timeout', TIMEOUT))
+        self.auto_mode = _get('Misc', 'auto_mode', '').lower() in ('true', '1', 'yes') or AUTO_MODE
         self.screens = int(_get('Display', 'screens', SCREENS))
         self.import_width = int(_get('Import', 'screen_width', SCREEN_WIDTH))
         self.import_height = int(_get('Import', 'screen_height', SCREEN_HEIGHT))
@@ -459,7 +460,7 @@ class Launcher:
         self.read_rc()
         self.make_window()
         self.update_heading()
-        self.mode_switch.set_active(AUTO_MODE and self.video is not None)
+        self.mode_switch.set_active(self.auto_mode and self.video is not None)
         self.window.connect("destroy", self.destroy)
         self.window.show_all()
 
