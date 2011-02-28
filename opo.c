@@ -115,7 +115,7 @@ set_up_loop(GstElement *source, int flags){
   if (!gst_element_seek(source, 1.0, GST_FORMAT_TIME,
           flags,
           GST_SEEK_TYPE_SET, 0,
-          GST_SEEK_TYPE_SET, end - 2 * NS_PER_FRAME
+          GST_SEEK_TYPE_SET, end - 8 * NS_PER_FRAME
       )) {
     g_print ("Seek failed!\n");
   }
