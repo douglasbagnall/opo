@@ -470,10 +470,13 @@ class Launcher:
 
         self.window.add(self.vbox)
 
+    def place_window(self):
+        self.window.move(0, 0)
 
     def __init__(self):
         self.read_rc()
         self.make_window()
+        self.place_window()
         self.update_heading()
         self.mode_switch.set_active(self.auto_start and self.video is not None)
         self.window.connect("destroy", self.destroy)
