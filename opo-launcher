@@ -295,7 +295,7 @@ class Launcher:
         self.video = _get('Paths', 'last_played')
         self.timeout = int(_get('Misc', 'timeout', TIMEOUT))
         self.auto_start = _get('Misc', 'auto_start', '').lower() in ('true', '1', 'yes') or AUTO_START
-        self.full_screen = _get('Misc', 'full_screen', '').lower() in ('true', '1', 'yes') or FULL_SCREEN
+        self.full_screen = _get('Display', 'full_screen', '').lower() in ('true', '1', 'yes') or FULL_SCREEN
         self.screens = int(_get('Display', 'screens', SCREENS))
         self.import_width = int(_get('Import', 'screen_width', SCREEN_WIDTH))
         self.import_height = int(_get('Import', 'screen_height', SCREEN_HEIGHT))
