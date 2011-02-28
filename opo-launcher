@@ -45,7 +45,7 @@ def name_suggester(dir, base, suffix):
 
 def start_stitching_process(output_file, input_files, width, height,
                             audio_source=None, muxer=MUXER, encoder=ENCODER,
-                            scale=1.0, clip_top=0):
+                            scale=1.0, clip_top=0, audio_codec='mp2'):
     import urllib
     from urlparse import urlsplit
     try:
@@ -72,19 +72,25 @@ def start_stitching_process(output_file, input_files, width, height,
             muxer = 'avi'
 
     encoders = {
-        'vp8': ['vp8enc', 'quality=7'],
+        'vp8': ['vp8enc', 'quality=5'],
         'mjpeg': ['jpegenc', 'idct-method=2'],
         'mpeg1': ['mpeg2enc',], #XXX need to set bitrate, etc
         'theora': ['theoraenc',], #XXX settings
         'x264': ['x264enc', 'tune=fastdecode', 'quantizer=20'],
         'flv': ['ffenc_flv', "bitrate=%(bitrate)s"],  #XXX settings
-        'mpeg4': ['ffenc_mpeg4', "pass=2", 'quantizer=5'],  #XXX settings
-        'msmpeg4': ['ffenc_msmpeg4', "pass=2", 'quantizer=5'],# "bitrate=%(bitrate)s"
+        'mpeg4': ['ffenc_mpeg4', "pass=2", 'quantizer=4'],  #XXX settings
+        'msmpeg4': ['ffenc_msmpeg4', "pass=2", 'quantizer=4'],# "bitrate=%(bitrate)s"
 
         }
     details = {
         'bitrate': int(BYTES_PER_PIXEL_PER_SECOND * width * height * len(input_files)),
     }
+    audio_codecs = {
+        'vorbis': ['vorbisenc', 'bitrate=192', 'cbr=true', 'target=bitrate',],
+        'mp3': ['lamemp3enc', 'bitrate=192', 'cbr=true', 'target=bitrate',],
+        'mp2': ['twolame', 'bitrate=320'],
+        'wav':['wavenc'],
+        }
     muxers = {
         'avi': ['!', 'avimux', 'name=mux', ],
         'flv': ['!', 'flvmux', 'name=mux', ],
@@ -129,14 +135,9 @@ def start_stitching_process(output_file, input_files, width, height,
                 'name=demux',
                 'demux.',
                 '!', 'queue',
-                #'!', 'vorbisenc',
-                #'!', 'lamemp3enc',
-                #'bitrate=192', 'cbr=true', 'target=bitrate',
-                '!', 'twolame',
-                'bitrate=320',
-                '!', 'mux.',
-                'demux.'
-                ])
+                '!'])
+            pipeline.extend(audio_codecs[audio_codec])
+            pipeline.extend(['!', 'mux.', 'demux.'])
         pipeline.extend([
             '!', 'deinterlace',
             '!', 'videoscale',
