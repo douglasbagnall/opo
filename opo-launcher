@@ -44,7 +44,8 @@ def name_suggester(dir, base, suffix):
     raise OpoError("please: think up a name, or we'll be here forever")
 
 def start_stitching_process(output_file, input_files, width, height,
-                            audio_source=None, muxer=MUXER, encoder=ENCODER):
+                            audio_source=None, muxer=MUXER, encoder=ENCODER,
+                            scale=1.0, clip_top=0):
     import urllib
     from urlparse import urlsplit
     try:
@@ -75,7 +76,7 @@ def start_stitching_process(output_file, input_files, width, height,
         'mjpeg': ['jpegenc', 'idct-method=2'],
         'mpeg1': ['mpeg2enc',], #XXX need to set bitrate, etc
         'theora': ['theoraenc',], #XXX settings
-        'x264': ['x264enc', 'tune=fastdecode', ],
+        'x264': ['x264enc', 'tune=fastdecode', 'quantizer=20'],
         'flv': ['ffenc_flv', "bitrate=%(bitrate)s"],  #XXX settings
         'mpeg4': ['ffenc_mpeg4', "pass=2", 'quantizer=5'],  #XXX settings
         'msmpeg4': ['ffenc_msmpeg4', "pass=2", 'quantizer=5'],# "bitrate=%(bitrate)s"
@@ -104,9 +105,17 @@ def start_stitching_process(output_file, input_files, width, height,
                 + encoder_pipe +
                 mux_pipe +
                 ['!', 'filesink', 'location=%s' % output_file,])
+
+    image_width = int(width * scale)
+    image_height = int(height * scale)
+    image_width_adj = (width - image_width) // 2
+
+
     for i, fn in enumerate(input_files):
-        left = i * width
-        right = (len(input_files) - 1 - i) * width
+        left = i * width + image_width_adj
+        right = (len(input_files) - 1 - i) * width + image_width_adj
+        top = - clip_top
+
         if i != audio_source:
             pipeline.extend([
                 'uridecodebin',
@@ -131,9 +140,9 @@ def start_stitching_process(output_file, input_files, width, height,
         pipeline.extend([
             '!', 'deinterlace',
             '!', 'videoscale',
-            '!', 'video/x-raw-yuv,', 'width=%s,' % width, 'height=%s' % height,
-            ';', 'video/x-raw-rgb,', 'width=%s,' % width, 'height=%s' % height,
-            '!', 'videobox', 'border-alpha=0', 'alpha=1', 'left=-%s' % left, 'right=-%s' % right,
+            '!', 'video/x-raw-yuv,', 'width=%s,' % image_width, 'height=%s' % image_height,
+            ';', 'video/x-raw-rgb,', 'width=%s,' % image_width, 'height=%s' % image_height,
+            '!', 'videobox', 'border-alpha=0', 'alpha=1', 'left=-%s' % left, 'right=-%s' % right, 'top=0', 'bottom=%s' % (image_height - height),
             '!', 'queue',
             '!', 'mix.',
             ])
@@ -159,7 +168,7 @@ class Launcher:
             cmd.append('-m')
         if self.full_screen:
             cmd.append('-f')
-        log("Starting play:", cmd)
+        log("Starting play: %r", ' '.join(cmd))
         subprocess.call(cmd)
 
     def on_play_now(self, widget, data=None):
