@@ -72,7 +72,7 @@ def start_stitching_process(output_file, input_files, width, height,
             muxer = 'avi'
 
     encoders = {
-        'vp8': ['vp8enc', 'quality=5'],
+        'vp8': ['vp8enc', 'quality=6'],
         'mjpeg': ['jpegenc', 'idct-method=2'],
         'mpeg1': ['mpeg2enc',], #XXX need to set bitrate, etc
         'theora': ['theoraenc',], #XXX settings
