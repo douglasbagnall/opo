@@ -31,6 +31,6 @@ INPUT_VIDEOS = [
 #p = opo_launcher.start_stitching_process('/tmp/test.avi', INPUT_VIDEOS[:4], 352, 288)
 p = opo_launcher.start_stitching_process(filename, INPUT_VIDEOS, 512, 384, 2,
                                          encoder=codec, muxer=muxer, scale=SCALE,
-                                         clip_top=0, audio_codec='mp2')
+                                         clip_top=0, audio_codec='mp2', progress_report=True)
 
 print p.communicate()

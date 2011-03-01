@@ -45,7 +45,8 @@ def name_suggester(dir, base, suffix):
 
 def start_stitching_process(output_file, input_files, width, height,
                             audio_source=None, muxer=MUXER, encoder=ENCODER,
-                            scale=1.0, clip_top=0, audio_codec='mp2'):
+                            scale=1.0, clip_top=0, audio_codec='mp2',
+                            progress_report=False):
     import urllib
     from urlparse import urlsplit
     try:
@@ -100,6 +101,10 @@ def start_stitching_process(output_file, input_files, width, height,
     muxers['mpg'] = muxers['mpeg']
     encoder_pipe = [s % details for s in encoders[encoder]]
     mux_pipe = [s % details for s in muxers[muxer]]
+    if progress_report:
+        progress_pipe = ['progressreport', '!']
+    else:
+        progress_pipe = []
 
     pipeline = (['gst-launch-0.10',
                  'videomixer',
@@ -108,6 +113,7 @@ def start_stitching_process(output_file, input_files, width, height,
                  '!', 'ffmpegcolorspace',
                  '!',
                 ]
+                + progress_pipe +
                 + encoder_pipe +
                 mux_pipe +
                 ['!', 'filesink', 'location=%s' % output_file,])
