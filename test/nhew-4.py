@@ -15,8 +15,8 @@ try:
 except IndexError:
     muxer = 'avi'
 
-#SCALE = 3.0 / 4.0
-SCALE = 7.0 / 8.0
+SCALE = 3.0 / 4.0
+#SCALE = 7.0 / 8.0
 
 
 filename = '%s/stitched_video/nhew2-512-%s-%s.%s' % (OPO_DIR, int(SCALE * 100), codec, muxer)
