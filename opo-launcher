@@ -74,7 +74,7 @@ def start_stitching_process(output_file, input_files, width, height,
 
     encoders = {
         'vp8': ['vp8enc', 'quality=6'],
-        'mjpeg': ['jpegenc', 'idct-method=2'],
+        'mjpeg': ['jpegenc', 'idct-method=2', 'quality=90'],
         'mpeg1': ['mpeg2enc',], #XXX need to set bitrate, etc
         'theora': ['theoraenc',], #XXX settings
         'x264': ['x264enc', 'tune=fastdecode', 'quantizer=20'],
