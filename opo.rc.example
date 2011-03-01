@@ -1,21 +1,21 @@
+[Import]
+screen_width = 512
+screen_height = 384
+
 [Misc]
 timeout = 15
 auto_start = true
 
 [Display]
-screen_width = 1024
+screen_width = 512
 x_screens = 2
-screens = 4
-force_multiscreen = false
-screen_height = 768
 full_screen = true
-
-[Import]
-screen_width = 1024
-screen_height = 768
+screens = 4
+force_multiscreen = true
+screen_height = 384
 
 [Paths]
 unstitched_dir = /home/fresh/unstitched_video
-last_played = file:///home/fresh/opo/stitched_video/nhew-x264.avi
+last_played = file:///home/fresh/opo/stitched_video/nhew2-512-75-x264.avi
 choose_dir = /home/fresh/opo/stitched_video
 

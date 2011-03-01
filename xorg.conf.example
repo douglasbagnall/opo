@@ -8,26 +8,31 @@ Section "ServerLayout"
 EndSection
 
 Section "ServerFlags"
-        Option "BlankTime"  "0"
-        Option "StandbyTime"  "0"
-        Option "SuspendTime"  "0"
+        Option "BlankTime"  "999"
+        Option "StandbyTime"  "999"
+        Option "SuspendTime"  "999"
+	Option "DPMS" "off"
 EndSection
 
 
 Section "Monitor"
 	Identifier   "Monitor-0"
+	Option       "DPMS" "off"
 EndSection
 
 Section "Monitor"
 	Identifier   "Monitor-1"
+	Option       "DPMS" "off"
 EndSection
 
 Section "Monitor"
 	Identifier   "Monitor-2"
+	Option       "DPMS" "off"
 EndSection
 
 Section "Monitor"
 	Identifier   "Monitor-3"
+	Option       "DPMS" "off"
 EndSection
 
 
@@ -35,7 +40,7 @@ Section "Device"
 	Identifier  "Device-0"
 	Driver      "radeon"
 	BusID       "PCI:1:0:0"
-#	Option      "IgnoreEDID"  "true"
+	Option      "IgnoreEDID"  "true"
 	Option 	    "ZaphodHeads" "DVI-0"
 EndSection
 
@@ -43,7 +48,7 @@ Section "Device"
 	Identifier  "Device-1"
 	Driver      "radeon"
 	BusID       "PCI:1:0:0"
-#	Option      "IgnoreEDID"  "true"
+	Option      "IgnoreEDID"  "true"
 	Option 	    "ZaphodHeads" "VGA-0"
 EndSection
 
@@ -51,7 +56,7 @@ Section "Device"
 	Identifier  "Device-2"
 	Driver      "radeon"
 	BusID       "PCI:2:0:0"
-#	Option      "IgnoreEDID"  "true"
+	Option      "IgnoreEDID"  "true"
 	Option 	    "ZaphodHeads" "DVI-1"
 EndSection
 
@@ -59,7 +64,7 @@ Section "Device"
 	Identifier  "Device-3"
 	Driver      "radeon"
 	BusID       "PCI:2:0:0"
-#	Option      "IgnoreEDID"  "true"
+	Option      "IgnoreEDID"  "true"
 	Option 	    "ZaphodHeads" "VGA-1"
 EndSection
 
