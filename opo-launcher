@@ -167,7 +167,7 @@ class Launcher:
 
     def play(self, logfile=None):
         """Play the currently selected video"""
-        if log is not None:
+        if logfile is not None:
             import time
             logfile = logfile.replace('$NOW', time.strftime('%Y-%m-%d+%H:%M:%S'))
             f = open(logfile, 'w')
@@ -182,7 +182,8 @@ class Launcher:
             cmd.append('-f')
         log("Starting play: %r", ' '.join(cmd))
         subprocess.call(cmd, stdout=f, stderr=subprocess.STDOUT)
-        f.close()
+        if logfile is not None:
+            f.close()
 
 
     def on_play_now(self, widget, data=None):
@@ -225,7 +226,7 @@ class Launcher:
                 self.mode_switch.set_label("Play _automatically in %s seconds" % self.countdown)
             return True
         self.auto_tick_id = None
-        self.play()
+        self.play(logfile="logs/opo-auto-$NOW.log")
         #returning False stops countdown, which is perhaps irrelevant
         #as self.play should never return
         return False
