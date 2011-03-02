@@ -1,9 +1,11 @@
 cd ~/opo
-mkdir -p logs
-LOG=logs/opo-launcher.log
-nowlog=$LOG-$(date +%Y-%m-%d+%H.%M.%S)
+#mkdir -p logs
+#LOG=logs/opo-launcher.log
+#nowlog=$LOG-$(date +%Y-%m-%d+%H.%M.%S)
+#
+#rm -f $LOG
+#ln -s $(basename $nowlog) $LOG
+#
+#./opo-launcher &> $nowlog
 
-rm -f $LOG
-ln -s $(basename $nowlog) $LOG
-
-./opo-launcher &> $nowlog
+./opo-launcher

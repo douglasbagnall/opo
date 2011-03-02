@@ -112,9 +112,9 @@ def start_stitching_process(output_file, input_files, width, height,
                  'background=1',
                  '!', 'ffmpegcolorspace',
                  '!',
-                ]
-                + progress_pipe +
-                + encoder_pipe +
+                ] +
+                progress_pipe +
+                encoder_pipe +
                 mux_pipe +
                 ['!', 'filesink', 'location=%s' % output_file,])
 
@@ -165,8 +165,13 @@ class Launcher:
     tiemout = TIMEOUT
     chooser = None
 
-    def play(self):
+    def play(self, logfile=None):
         """Play the currently selected video"""
+        if log is not None:
+            import time
+            logfile = logfile.replace('$NOW', time.strftime('%Y-%m-%d+%H:%M:%S'))
+            f = open(logfile, 'w')
+
         cmd = [OPO, '-s', str(self.screens), '-c', self.video,
                '-w', str(self.display_width), '-h', str(self.display_height)]
         if self.x_screens:
@@ -176,10 +181,12 @@ class Launcher:
         if self.full_screen:
             cmd.append('-f')
         log("Starting play: %r", ' '.join(cmd))
-        subprocess.call(cmd)
+        subprocess.call(cmd, stdout=f, stderr=subprocess.STDOUT)
+        f.close()
+
 
     def on_play_now(self, widget, data=None):
-        self.play()
+        self.play(logfile="logs/opo-$NOW.log")
 
     def on_mode_switch(self, widget, data=None):
         """Turning auto mode on or off, according to the widget's
