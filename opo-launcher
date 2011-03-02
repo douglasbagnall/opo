@@ -129,7 +129,7 @@ def start_stitching_process(output_file, input_files, width, height,
         top = clip_top
         if fn.endswith('Julia%20resize%204%2028th.mov'):
             top += top * 2 // 3
-        
+
         if i != audio_source:
             pipeline.extend([
                 'uridecodebin',
@@ -170,6 +170,7 @@ class Launcher:
 
     def play(self, logfile=None):
         """Play the currently selected video"""
+        os.environ['GST_DEBUG'] = '2'
         if logfile is not None:
             import time
             logfile = logfile.replace('$NOW', time.strftime('%Y-%m-%d+%H:%M:%S'))
@@ -190,7 +191,6 @@ class Launcher:
 
 
     def on_play_now(self, widget, data=None):
-        os.env['GST_DEBUG'] = '2'
         self.play(logfile="logs/opo-$NOW.log")
 
     def on_mode_switch(self, widget, data=None):
