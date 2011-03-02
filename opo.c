@@ -29,6 +29,34 @@ make_good_caps(){
   return caps;
 }
 
+static inline char *
+attempt_filename_to_uri(char *filename){
+  char *uri;
+  if (g_str_has_prefix(filename, "/")){
+    uri = g_strconcat("file://",
+        option_content,
+        NULL);
+  }
+  else {
+    char *cwd = g_get_current_dir();
+    uri = g_strconcat("file://",
+        cwd,
+        "/",
+        option_content,
+        NULL);
+    g_free(cwd);
+  }
+  return uri;
+}
+
+static void hide_mouse(GtkWidget *widget){
+  GdkWindow *w = GDK_WINDOW(widget->window);
+  GdkDisplay *display = gdk_display_get_default();
+  GdkCursor *cursor = gdk_cursor_new_for_display(display, GDK_BLANK_CURSOR);
+  gdk_window_set_cursor(w, cursor);
+  gdk_cursor_unref (cursor);
+}
+
 
 static void
 post_tee_pipeline(GstBin *bin, GstElement *tee, GstElement *sink,
@@ -57,13 +85,6 @@ post_tee_pipeline(GstBin *bin, GstElement *tee, GstElement *sink,
 }
 
 
-static void hide_mouse(GtkWidget *widget){
-  GdkWindow *w = GDK_WINDOW(widget->window);
-  GdkDisplay *display = gdk_display_get_default();
-  GdkCursor *cursor = gdk_cursor_new_for_display(display, GDK_BLANK_CURSOR);
-  gdk_window_set_cursor(w, cursor);
-  gdk_cursor_unref (cursor);
-}
 
 
 static GstBusSyncReply
@@ -287,25 +308,6 @@ set_up_window(GMainLoop *loop, window_t *w, int screen_no){
   hide_mouse(window);
 }
 
-static inline char *
-attempt_filename_to_uri(char *filename){
-  char *uri;
-  if (g_str_has_prefix(filename, "/")){
-    uri = g_strconcat("file://",
-        option_content,
-        NULL);
-  }
-  else {
-    char *cwd = g_get_current_dir();
-    uri = g_strconcat("file://",
-        cwd,
-        "/",
-        option_content,
-        NULL);
-    g_free(cwd);
-  }
-  return uri;
-}
 
 
 static GstPipeline *
