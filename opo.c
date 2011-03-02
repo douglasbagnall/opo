@@ -359,7 +359,6 @@ tee_bin(GMainLoop *loop, window_t *windows){
   GstPad *teesink = gst_element_get_pad(tee, "sink");
   GstPad *ghost = gst_ghost_pad_new("sink", teesink);
   gst_element_add_pad(GST_ELEMENT(bin), ghost);
-  //XXX unref pad?
 
   /* construct the various arms
      crop _left/_right are amount to cut, not coordinate of cut
@@ -372,9 +371,9 @@ tee_bin(GMainLoop *loop, window_t *windows){
   for (i = 0; i < option_screens; i++){
     window_t *w = windows + i;
     set_up_window(loop, w, i);
-    if (w->sink){
+    /*if (w->sink){
       gst_object_unref(w->sink);
-    }
+      }*/
     w->sink = gst_element_factory_make("xvimagesink", NULL);
     g_object_set(G_OBJECT(w->sink),
         "display", w->display,
