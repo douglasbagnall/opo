@@ -15,7 +15,6 @@ static gint option_screens = 4;
 static gint option_width = 0;
 static gint option_height = 0;
 static gint option_autosize = 0; //not actually exposed to commandline
-static guint option_pipeline_cycles = 0;
 static guint option_loop_end = 0;
 static char *option_content = NULL;
 
@@ -35,8 +34,6 @@ static GOptionEntry entries[] =
     "put windows on proper screens, or crash", NULL },
   { "x-screens", 'x', 0, G_OPTION_ARG_INT, &option_x_screens,
     "use this many X screens", NULL },
-  { "pipeline-cycles", 'p', 0, G_OPTION_ARG_INT, &option_pipeline_cycles,
-    "reuse the same pipeline this many times (default 0 = infinite)", NULL },
   { "loop-end", 'l', 0, G_OPTION_ARG_INT, &option_loop_end,
     "loop after this many seconds, rather than at end (0 = end)", NULL },
   { "width", 'w', 0, G_OPTION_ARG_INT, &option_width, "width of each screen", NULL },
