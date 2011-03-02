@@ -36,7 +36,7 @@ static GOptionEntry entries[] =
   { "x-screens", 'x', 0, G_OPTION_ARG_INT, &option_x_screens,
     "use this many X screens", NULL },
   { "pipeline-cycles", 'p', 0, G_OPTION_ARG_INT, &option_pipeline_cycles,
-    "reuse the same pipeline this many times (default 0, means infinite)", NULL },
+    "reuse the same pipeline this many times (default 0 = infinite)", NULL },
   { "loop-end", 'l', 0, G_OPTION_ARG_INT, &option_loop_end,
     "loop after this many seconds, rather than at end (0 = end)", NULL },
   { "width", 'w', 0, G_OPTION_ARG_INT, &option_width, "width of each screen", NULL },

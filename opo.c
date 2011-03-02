@@ -6,6 +6,12 @@
 #include <gdk/gdkx.h>
 #include "opo.h"
 
+static void gstreamer_stop(GstElement *pipeline);
+static GstPipeline *gstreamer_start(GMainLoop *loop, window_t *windows);
+
+
+static guint pipeline_cycles_remaining;
+
 static GstCaps *
 make_good_caps(){
   GstCaps *caps;
@@ -126,7 +132,13 @@ sync_bus_call(GstBus *bus, GstMessage *msg, gpointer data)
 static void
 set_up_loop(GstElement *source, int flags){
   g_print("loooooping\n");
-  gint64 end;
+  if (option_pipeline_cycles &&
+      ! --pipeline_cycles_remaining){
+    g_print("renewing pipeline!\n");
+    gstreamer_stop(source);
+    //gstreamer_start();
+  }
+
   gint64 end, loop_end;
   GstFormat nanosec_format = GST_FORMAT_TIME;
   gst_element_query_duration(source,
@@ -407,6 +419,7 @@ gstreamer_start(GMainLoop *loop, window_t *windows)
   else{
     pipeline = test_pre_tee_pipeline();
   }
+  pipeline_cycles_remaining = option_pipeline_cycles;
   GstBin *teebin = tee_bin(loop, windows);
 
   if (option_content) {
