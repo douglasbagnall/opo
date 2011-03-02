@@ -499,7 +499,7 @@ class Launcher:
         self.window.add(self.vbox)
 
     def place_window(self):
-        self.window.move(0, 0)
+        self.window.move(300, 50)
 
     def __init__(self):
         self.read_rc()
