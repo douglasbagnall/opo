@@ -116,7 +116,6 @@ set_up_loop(GstElement *source, int flags){
           flags,
           GST_SEEK_TYPE_SET, NS_PER_FRAME,
           GST_SEEK_TYPE_SET, end - 25 * NS_PER_FRAME
-          //GST_SEEK_TYPE_SET, 60 * NS_PER_FRAME
       )) {
     g_print ("Seek failed!\n");
   }
@@ -218,11 +217,11 @@ video_widget_realize_cb(GtkWidget *widget, gpointer data)
   hide_mouse(widget);
 }
 
+/*create the X window, but not the xvimagesink*/
 static void
 set_up_window(GMainLoop *loop, window_t *w, int screen_no){
   GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   w->widget = window;
-  w->sink = gst_element_factory_make("xvimagesink", NULL);
   w->id = screen_no;
   g_signal_connect(w->widget, "realize", G_CALLBACK(video_widget_realize_cb), w);
 
@@ -243,13 +242,10 @@ set_up_window(GMainLoop *loop, window_t *w, int screen_no){
   }
   else{
     xscreen_no = screen_no * option_x_screens / option_screens;
-    char display[sizeof(":0.00")];
-    g_snprintf(display, sizeof(display), ":0.%d", xscreen_no);
+    /* record the display/screen number, so that xvimagesink can be top it later */
+    g_snprintf(w->display, sizeof(w->display), ":0.%d", xscreen_no);
     xscreen = gdk_display_get_screen(gdk_display_get_default(), xscreen_no);
     gtk_window_set_screen(GTK_WINDOW(window), xscreen);
-    g_object_set(G_OBJECT(w->sink),
-        "display", display,
-        NULL);
   }
   int x, y;
   int windows_per_xscreen = option_screens / option_x_screens;
@@ -376,6 +372,13 @@ tee_bin(GMainLoop *loop, window_t *windows){
   for (i = 0; i < option_screens; i++){
     window_t *w = windows + i;
     set_up_window(loop, w, i);
+    if (w->sink){
+      gst_object_unref(w->sink);
+    }
+    w->sink = gst_element_factory_make("xvimagesink", NULL);
+    g_object_set(G_OBJECT(w->sink),
+        "display", w->display,
+        NULL);
     post_tee_pipeline(bin, tee, w->sink, crop_left, crop_right);
     crop_left += option_width;
     crop_right -= option_width;
@@ -386,7 +389,7 @@ tee_bin(GMainLoop *loop, window_t *windows){
 
 
 static GstPipeline *
-gstreamer_start(GMainLoop *loop, window_t windows[MAX_SCREENS])
+gstreamer_start(GMainLoop *loop, window_t *windows)
 {
   GstPipeline *pipeline;
   if (option_content){
@@ -432,7 +435,6 @@ gstreamer_stop(GstElement *pipeline)
 gint main (gint argc, gchar *argv[])
 {
   //initialise threads before any gtk stuff (because not using gtk_init)
-  static window_t windows[MAX_SCREENS];
   g_type_init();
   g_thread_init(NULL);
   /*this is more complicated than plain gtk_init/gst_init, so that options from
@@ -472,6 +474,7 @@ gint main (gint argc, gchar *argv[])
     option_height = DEFAULT_HEIGHT;
     option_autosize = 1;
   }
+  window_t *windows = g_malloc0(sizeof(window_t) * option_screens);
 
   GMainLoop *loop = g_main_loop_new(NULL, FALSE);
 
