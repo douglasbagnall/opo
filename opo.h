@@ -4,8 +4,8 @@
 //default per-screen size
 #define DEFAULT_WIDTH (640 / 4)
 #define DEFAULT_HEIGHT 480
-
-#define NS_PER_FRAME ((guint64)(1000 * 1000 * 1000 / 25))
+#define BILLION ((guint64)(1000 * 1000 * 1000))
+#define NS_PER_FRAME ((guint64)(BILLION / 25))
 
 static gint option_fake = 0;
 static gboolean option_force_multiscreen = FALSE;
@@ -16,6 +16,7 @@ static gint option_width = 0;
 static gint option_height = 0;
 static gint option_autosize = 0; //not actually exposed to commandline
 static guint option_pipeline_cycles = 0;
+static guint option_loop_end = 0;
 static char *option_content = NULL;
 
 #define MAX_SCREENS 8
@@ -23,6 +24,7 @@ static char *option_content = NULL;
 #define MAX_X_SCREENS 8
 #define MIN_X_SCREENS 1
 #define MAX_PIXELS 999999
+
 
 static GOptionEntry entries[] =
 {
@@ -35,6 +37,8 @@ static GOptionEntry entries[] =
     "use this many X screens", NULL },
   { "pipeline-cycles", 'p', 0, G_OPTION_ARG_INT, &option_pipeline_cycles,
     "reuse the same pipeline this many times (default 0, means infinite)", NULL },
+  { "loop-end", 'l', 0, G_OPTION_ARG_INT, &option_loop_end,
+    "loop after this many seconds, rather than at end (0 = end)", NULL },
   { "width", 'w', 0, G_OPTION_ARG_INT, &option_width, "width of each screen", NULL },
   { "height", 'h', 0, G_OPTION_ARG_INT, &option_height, "height of screen", NULL },
   { "screens", 's', 0, G_OPTION_ARG_INT, &option_screens, "Use this many screens, (max "

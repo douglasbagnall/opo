@@ -127,16 +127,24 @@ static void
 set_up_loop(GstElement *source, int flags){
   g_print("loooooping\n");
   gint64 end;
+  gint64 end, loop_end;
   GstFormat nanosec_format = GST_FORMAT_TIME;
   gst_element_query_duration(source,
       &nanosec_format,
       &end
   );
-  g_print("stream ends at %f seconds\n", end / 1000.0 / 1000.0 / 1000.0);
+  if (option_loop_end){
+    loop_end = (gint64)option_loop_end * BILLION;
+  }
+  else{
+    loop_end = end - 25 * NS_PER_FRAME;
+  }
+  g_print("stream ends at %f seconds\nlooping at %f seconds\n",
+      end / (double)BILLION, loop_end / (double)BILLION);
   if (!gst_element_seek(source, 1.0, GST_FORMAT_TIME,
           flags,
           GST_SEEK_TYPE_SET, NS_PER_FRAME,
-          GST_SEEK_TYPE_SET, end - 25 * NS_PER_FRAME
+          GST_SEEK_TYPE_SET, loop_end
       )) {
     g_print ("Seek failed!\n");
   }
