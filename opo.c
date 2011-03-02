@@ -191,7 +191,7 @@ async_bus_call(GstBus *bus, GstMessage *msg, GstElement *pipeline)
   //g_print("async call with %s\n", GST_MESSAGE_TYPE_NAME(msg));
   switch(GST_MESSAGE_TYPE(msg)){
   case GST_MESSAGE_SEGMENT_DONE:
-    set_up_loop(pipeline, GST_SEEK_FLAG_SEGMENT);
+    set_up_loop(pipeline, GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_SEGMENT);
     break;
   case GST_MESSAGE_STATE_CHANGED:
     manage_state_change(msg, pipeline);
