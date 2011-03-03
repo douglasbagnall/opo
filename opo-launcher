@@ -21,7 +21,7 @@ MUXER = None
 #an approximate target for working out bps settings (for mpeg4/2-ish codecs)
 #256 * 192 * 4 screens --> 192k * BYTES_PER_PIXEL_PER_SECOND bps
 #1024 * 768 * 4 screens --> 3M * BYTES_PER_PIXEL_PER_SECOND bps
-BYTES_PER_PIXEL_PER_SECOND = 2.0
+BYTES_PER_PIXEL_PER_SECOND = 2.5
 
 RC_FILE = 'opo.rc'
 AUTO_START = False
@@ -77,7 +77,7 @@ def start_stitching_process(output_file, input_files, width, height,
         'mjpeg': ['jpegenc', 'idct-method=2', 'quality=85'],
         'mpeg1': ['mpeg2enc',], #XXX need to set bitrate, etc
         'theora': ['theoraenc',], #XXX settings
-        'x264': ['x264enc', 'tune=fastdecode', 'quantizer=22'],
+        'x264': ['x264enc', 'tune=fastdecode', 'quantizer=21'],
         'flv': ['ffenc_flv', "bitrate=%(bitrate)s"],  #XXX settings
         'mpeg4': ['ffenc_mpeg4', "bitrate=%(bitrate)s"],  #XXX settings
         'msmpeg4': ['ffenc_msmpeg4', "bitrate=%(bitrate)s"],#
