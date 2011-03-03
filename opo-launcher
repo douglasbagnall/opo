@@ -184,7 +184,7 @@ class Launcher:
             cmd.append('-m')
         if self.full_screen:
             cmd.append('-f')
-        log("Starting play: %r", ' '.join(cmd))
+        log("Starting play: %r" % ' '.join(cmd))
         subprocess.call(cmd, stdout=f, stderr=subprocess.STDOUT)
         if logfile is not None:
             f.close()
@@ -349,12 +349,13 @@ class Launcher:
             rc.write(configfile)
 
     def update_heading(self):
-        if self.video is not None:
+        try:
             video_name = self.video.rsplit('/', 1)[1]
             self.heading.set_markup('<big><b>%s</b> is ready to play</big>' %
                                     video_name)
             self.play_now.set_sensitive(True)
-        else:
+        except Exception, e:
+            log("Couldn't set heading", e)
             self.heading.set_markup('<big>No video selected</big>')
             self.play_now.set_sensitive(False)
 
