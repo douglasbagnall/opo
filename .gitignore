@@ -5,7 +5,11 @@
 *.o
 *.so
 opo
+opo.rc
 *.avi
 video-whale
 test_video
 junk
+stitched_video/
+unstitched_video/
+logs/
