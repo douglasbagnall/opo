@@ -14,6 +14,11 @@ GTK/GDK 2.22
 
 You need the dev packages.
 
+To run across multiple screens you need multiple video outputs; for
+more than 2 screens this means having more than one video card, which
+in turn means having a motherboard capable of handling multiple cards.
+Not all combinations of video cards will work.
+
 Compiling
 =========
 
@@ -35,7 +40,11 @@ Usage
 Importing video
 ===============
 
-XXX
+Opo-launcher provides a means to stitch together several single-window
+video sequences windows into an opo-ready multi-window video.
+
+The examples directory has scripts showing how this process can be
+controlled in greater detail.
 
 Name and history
 ================
@@ -67,6 +76,8 @@ Copyright and License
 
 Copyright 2011 Douglas Bagnall
 
-Portions copyright Gstreamer developers.
+Portions of opo.c were originally derived from examples provided by
+the Gstreamer developers.
 
-Licensed under the Gnu General Public License Version 3 (see COPYING).
+Provided under the terms of the Gnu General Public License Version 3
+(see the file COPYING or http://www.gnu.org/licenses/).
