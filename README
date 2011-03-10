@@ -81,3 +81,22 @@ the Gstreamer developers.
 
 Provided under the terms of the Gnu General Public License Version 3
 (see the file COPYING or http://www.gnu.org/licenses/).
+
+BUGS / TODO
+===========
+
+* Sometimes opo fails to open all its windows (race condition?)
+
+* opo ought to be able to auto-detect size.
+
+* opo-launcher could use the stitching process's progress report
+
+* start_stitching_process, and others could shift to a module, and
+  testable bits could be dragged out of Launcher
+
+* Various encoding and muxing settings could be fixed (or removed).
+
+* opo should (optionally/ automatically) use vertical stitching rather
+  than horizontal (i.e., 1x4 rather than 4x1), or both (2x2). This may
+  improve performance through better cache locality, and will allow
+  MPEG1/2 video for 4 * 1024x768 displays.
