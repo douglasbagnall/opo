@@ -85,7 +85,8 @@ Provided under the terms of the Gnu General Public License Version 3
 BUGS / TODO
 ===========
 
-* Sometimes opo fails to open all its windows (race condition?)
+* Sometimes opo fails to show all its windows.  This seems to be a
+  race condition.
 
 * opo ought to be able to auto-detect size.
 
@@ -96,7 +97,9 @@ BUGS / TODO
 
 * Various encoding and muxing settings could be fixed (or removed).
 
-* opo should (optionally/ automatically) use vertical stitching rather
-  than horizontal (i.e., 1x4 rather than 4x1), or both (2x2). This may
-  improve performance through better cache locality, and will allow
-  MPEG1/2 video for 4 * 1024x768 displays.
+* opo could (optionally/ automatically) use vertical stitching rather
+  than horizontal (i.e., 1x4 rather than 4x1), or both (2x2). Apart
+  from making a 4 x 1024x768 video 1 pixel wider than is allowed for
+  mpeg1/2 (which could conceivably be a sweet spot for fast decoding
+  off slow media), the 4x1 arrangement could possibly complicate
+  cropping and damage cache locality.
