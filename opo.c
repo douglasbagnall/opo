@@ -28,7 +28,7 @@ static GstPipeline *gstreamer_start(GMainLoop *loop, window_t *windows);
 
 
 static GstCaps *
-make_good_caps(){
+make_good_caps(void){
   GstCaps *caps;
   if (option_autosize && option_content){
     //automatically find size
@@ -339,7 +339,7 @@ set_up_window(GMainLoop *loop, window_t *w, int screen_no){
 
 
 static GstPipeline *
-uri_pre_tee_pipeline(){
+uri_pre_tee_pipeline(void){
   GstPipeline *pipeline;
   char *uri;
   if( g_str_has_prefix(option_content, "file://") ||
@@ -362,7 +362,7 @@ uri_pre_tee_pipeline(){
 }
 
 static GstPipeline *
-test_pre_tee_pipeline(){
+test_pre_tee_pipeline(void){
   GstPipeline *pipeline;
   pipeline = GST_PIPELINE(gst_pipeline_new("test_pipeline"));
   char * src_name = (option_fake) ? "videotestsrc" : "v4l2src";
