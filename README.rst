@@ -22,19 +22,21 @@ Not all combinations of video cards will work.
 Compiling
 =========
 
-Try `make`.
+Try ``make``.
 
 Usage
 =====
 
-#show a test picture split over 3 windows
-./opo -F 2 -s 3
+::
 
-#split a picture full-screen across 4 monitors connected to 2 cards
-./opo -c picture.avi -w 1024 -h 768 -x 2 -f -s 4
+   #show a test picture split over 3 windows
+   ./opo -F 2 -s 3
 
-#see what else you can try
-./opo --help
+   #split a picture full-screen across 4 monitors connected to 2 cards
+   ./opo -c picture.avi -w 1024 -h 768 -x 2 -f -s 4
+
+   #see what else you can try
+   ./opo --help
 
 
 Importing video
@@ -50,25 +52,26 @@ Name and history
 ================
 
 In 2002 or before, Zeeshan Ali Khattak and others made a video wall
-using Gstreamer and Xinerama[1][2].  They called it Video Whale.  To
+using Gstreamer and Xinerama.  They called it `Video Whale`_ (also
+described here_).  To
 run the 4x4 array of monitors, they had 4 computers with 4 video cards
 in each, and a fifth computer that fed video to the others over the
 network.  Opo was inspired by that project.
 
-"Ngā Hau E Whā" is an artwork developed by Leilani Kake for the 2011
+`Ngā Hau E Whā`_ is an artwork developed by Leilani Kake for the 2011
 Auckland Arts Festival, to be shown at Fresh Gallery Otara[3].  It
 requires four perfectly synchronised video projections.
 
-"Opo" was a famous New Zealand dolphin[4].
+Opo_ was a famous New Zealand dolphin.
 
 This software was written for Leilani Kake's work, and Opo is a
 conveniently short and available name for a small New Zealand Video
 Whale.
 
-[1] http://gstreamer.freedesktop.org/apps/videowhale.html
-[2] http://www.linux-1u.net/X11/Quad/gstreamer.net/video-wall-howto.html
-[3] http://www.aucklandfestival.co.nz/events/nga-hau-e-wha-the-four-winds.aspx
-[4] http://en.wikipedia.org/wiki/Opo_the_Dolphin
+.. _`Video Whale`: http://gstreamer.freedesktop.org/apps/videowhale.html
+.. _here: http://www.linux-1u.net/X11/Quad/gstreamer.net/video-wall-howto.html
+.. _`Ngā Hau E Whā`: http://ngahauewha.wordpress.com/
+.. _Opo: http://en.wikipedia.org/wiki/Opo_the_Dolphin
 
 
 Copyright and License
